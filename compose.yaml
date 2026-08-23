@@ -1,0 +1,19 @@
+services:
+  terrain-audit:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+    environment:
+      PYTHONUNBUFFERED: "1"
+    command:
+      - python
+      - -m
+      - naqsha.terrain
+      - --aoi
+      - data/aoi/pilot.geojson
+      - --output
+      - artifacts/terrain
+

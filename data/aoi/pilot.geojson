@@ -1,0 +1,25 @@
+{
+  "type": "FeatureCollection",
+  "name": "provisional_gulberg_liberty_pilot",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Provisional Gulberg–Liberty terrain test",
+        "status": "technical-test-only",
+        "notes": "Replace after evidence-based pilot ranking."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [74.3290, 31.4930],
+          [74.3710, 31.4930],
+          [74.3710, 31.5350],
+          [74.3290, 31.5350],
+          [74.3290, 31.4930]
+        ]]
+      }
+    }
+  ]
+}
+
