@@ -3,6 +3,7 @@
 | Need | MVP source | Effective resolution | Important limitation |
 |---|---|---:|---|
 | Terrain | Copernicus GLO-30 DSM | 30 m | Surface heights and vertical noise; not street-grade DTM |
+| Conditioned terrain | FABDEM 1.2 | 30 m | Derived from Copernicus; non-commercial licence and not an independent survey |
 | Land cover | ESA WorldCover 2021 | 10 m | Global classes need local imperviousness checks |
 | Buildings | OpenStreetMap / open building footprints | feature-level | Completeness and offsets vary |
 | Roads/water | OpenStreetMap / HDX extracts | feature-level | Drainage network is likely incomplete |
@@ -13,3 +14,6 @@
 No source is silently substituted. Changes to source, version, or licensing
 must update this register and the generated model metadata.
 
+FABDEM is used only to test sensitivity to machine-learned building and forest
+removal. A production/commercial deployment must confirm licensing or replace
+it with an appropriately licensed terrain source.

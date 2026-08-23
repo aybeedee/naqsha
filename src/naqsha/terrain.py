@@ -26,7 +26,9 @@ OUTPUT_CRS = CRS.from_epsg(32643)
 class TerrainMetrics:
     aoi_name: str
     aoi_area_km2: float
+    source_name: str
     source: str
+    source_license: str
     source_resolution_m_approx: float
     output_crs: str
     output_cell_size_m: float
@@ -134,7 +136,9 @@ def terrain_statistics(elevation: np.ndarray, cell_size: float) -> dict[str, flo
     }
 
 
-def write_geotiff(path: Path, elevation: np.ndarray, transform) -> None:
+def write_geotiff(
+    path: Path, elevation: np.ndarray, transform, source_name: str, source_license: str
+) -> None:
     profile = {
         "driver": "GTiff",
         "height": elevation.shape[0],
@@ -150,9 +154,10 @@ def write_geotiff(path: Path, elevation: np.ndarray, transform) -> None:
     with rasterio.open(path, "w", **profile) as target:
         target.write(np.where(np.isfinite(elevation), elevation, -9999.0).astype("float32"), 1)
         target.update_tags(
-            source_product="Copernicus DEM GLO-30",
+            source_product=source_name,
+            source_license=source_license,
             evidence_resolution="30 metres",
-            warning="This DSM does not support street-level elevation claims.",
+            warning="This global elevation model does not support street-level elevation claims.",
         )
 
 
@@ -216,6 +221,8 @@ def write_report(path: Path, metrics: TerrainMetrics) -> None:
                 ),
                 "",
                 f"Source: `{metrics.source}`",
+                f"Source product: {metrics.source_name}",
+                f"Source licence: {metrics.source_license}",
                 f"Generated: {metrics.generated_at}",
                 "",
             ]
@@ -223,7 +230,13 @@ def write_report(path: Path, metrics: TerrainMetrics) -> None:
     )
 
 
-def audit(aoi_path: Path, output_dir: Path, source_url: str | None = None) -> TerrainMetrics:
+def audit(
+    aoi_path: Path,
+    output_dir: Path,
+    source_url: str | None = None,
+    source_name: str = "Copernicus DEM GLO-30",
+    source_license: str = "Copernicus DEM licence",
+) -> TerrainMetrics:
     name, geometry = read_aoi(aoi_path)
     area_km2 = projected_area_km2(geometry)
     if not 5 <= area_km2 <= 25:
@@ -249,14 +262,22 @@ def audit(aoi_path: Path, output_dir: Path, source_url: str | None = None) -> Te
     metrics = TerrainMetrics(
         aoi_name=name,
         aoi_area_km2=area_km2,
+        source_name=source_name,
         source=source_url,
+        source_license=source_license,
         source_resolution_m_approx=30,
         output_crs=OUTPUT_CRS.to_string(),
         output_cell_size_m=cell_size,
         generated_at=datetime.now(UTC).isoformat(),
         **stats,
     )
-    write_geotiff(output_dir / "copernicus-dem-utm43n.tif", elevation, transform)
+    write_geotiff(
+        output_dir / "terrain-utm43n.tif",
+        elevation,
+        transform,
+        source_name,
+        source_license,
+    )
     write_hillshade(output_dir / "hillshade.png", elevation, cell_size, transform)
     (output_dir / "metrics.json").write_text(json.dumps(asdict(metrics), indent=2) + "\n")
     write_report(output_dir / "report.md", metrics)
@@ -271,12 +292,20 @@ def parse_args() -> argparse.Namespace:
         "--source-url",
         help="Override the inferred Copernicus URL; useful for offline files and tests",
     )
+    parser.add_argument("--source-name", default="Copernicus DEM GLO-30")
+    parser.add_argument("--source-license", default="Copernicus DEM licence")
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
-    metrics = audit(args.aoi, args.output, args.source_url)
+    metrics = audit(
+        args.aoi,
+        args.output,
+        args.source_url,
+        source_name=args.source_name,
+        source_license=args.source_license,
+    )
     print(json.dumps(asdict(metrics), indent=2))
 
 

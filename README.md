@@ -13,7 +13,9 @@ The terrain audit:
 2. reads the public Copernicus GLO-30 terrain tile covering it;
 3. clips and reprojects the terrain to UTM zone 43N;
 4. writes a clipped GeoTIFF, hillshade, machine-readable metrics, and a short
-   Markdown quality report.
+   Markdown quality report;
+5. compares the raw Copernicus surface against FABDEM's building/forest-removed
+   derivative to measure how strongly conditioning changes local routing.
 
 The included boundary is a **provisional technical test area** around the
 Gulberg–Liberty corridor. It is not yet the final hydraulic pilot.
@@ -29,6 +31,11 @@ make audit
 
 Outputs are written to `artifacts/terrain/`. The first run needs internet
 access to read the public Copernicus Cloud Optimized GeoTIFF.
+
+Run the conditioning comparison with `make compare` (container) or
+`make compare-local` (local virtual environment). FABDEM is licensed for
+non-commercial use; it is an evaluation input, not yet an unconditional
+production dependency.
 
 Run the automated tests with:
 

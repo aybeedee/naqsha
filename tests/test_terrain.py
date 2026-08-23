@@ -74,7 +74,7 @@ def test_audit_with_local_synthetic_raster(tmp_path: Path):
     metrics = audit(aoi, output, str(source))
     assert 5 <= metrics.aoi_area_km2 <= 25
     assert metrics.valid_cell_count > 0
-    assert (output / "copernicus-dem-utm43n.tif").exists()
+    assert (output / "terrain-utm43n.tif").exists()
     assert (output / "hillshade.png").exists()
     assert (output / "metrics.json").exists()
     assert (output / "report.md").exists()
