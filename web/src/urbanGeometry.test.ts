@@ -27,6 +27,7 @@ const options = {
     crs: 'EPSG:32643',
     transform: [30, 0, 0, 0, -30, 0],
     bounds: [0, 0, 60, 60],
+    geographicBounds: [74.3, 31.5, 74.4, 31.6],
     extentWidthMetres: 60,
     extentHeightMetres: 60,
     activeFile: 'active.u8',
@@ -41,6 +42,8 @@ describe('urban geometry', () => {
   it('extrudes a building footprint', () => {
     const geometry = buildBuildingGeometry(options)
     expect(geometry.getAttribute('position').count).toBeGreaterThan(6)
+    const normals = geometry.getAttribute('normal')
+    expect(normals.getY(0)).toBeGreaterThan(0.9)
   })
 
   it('turns a mapped line into a visible ribbon', () => {

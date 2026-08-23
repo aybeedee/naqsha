@@ -1,6 +1,7 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
+import { loadOsmBasemapTexture } from './basemap'
 import { buildAgreementGeometry, buildTerrainGeometry, buildWaterGeometry } from './geometry'
 import type { Dimension, ScenarioData, UrbanContextData, UrbanLabel, ViewId } from './types'
 import { buildBuildingGeometry, buildNetworkGeometry, elevationAt } from './urbanGeometry'
@@ -12,7 +13,9 @@ interface TerrainSceneProps {
   dimension: Dimension
   threshold: number
   verticalExaggeration: number
+  waterDepthExaggeration: number
   showWater: boolean
+  showBasemap: boolean
   showBuildings: boolean
   showNetwork: boolean
   showLabels: boolean
@@ -91,6 +94,7 @@ function createLabelSprite(label: UrbanLabel): THREE.Sprite {
   const sprite = new THREE.Sprite(material)
   const width = label.category === 'district' ? 285 : 245
   sprite.scale.set(width, width * 96 / 512, 1)
+  sprite.userData.baseLabelWidth = width
   sprite.renderOrder = 10
   return sprite
 }
@@ -102,7 +106,9 @@ export function TerrainScene({
   dimension,
   threshold,
   verticalExaggeration,
+  waterDepthExaggeration,
   showWater,
+  showBasemap,
   showBuildings,
   showNetwork,
   showLabels,
@@ -110,6 +116,32 @@ export function TerrainScene({
 }: TerrainSceneProps) {
   const hostRef = useRef<HTMLDivElement>(null)
   const sceneRef = useRef<SceneState | null>(null)
+  const [basemapTexture, setBasemapTexture] = useState<THREE.CanvasTexture | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    if (!showBasemap) {
+      setBasemapTexture((current) => {
+        current?.dispose()
+        return null
+      })
+      return
+    }
+    loadOsmBasemapTexture(data.metadata.grid.geographicBounds)
+      .then((texture) => {
+        if (cancelled) texture.dispose()
+        else setBasemapTexture((current) => {
+          current?.dispose()
+          return texture
+        })
+      })
+      .catch((reason: unknown) => {
+        console.warn('OSM basemap unavailable; retaining local vector context.', reason)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [data.metadata.grid.geographicBounds, showBasemap])
 
   useEffect(() => {
     const host = hostRef.current
@@ -180,6 +212,16 @@ export function TerrainScene({
     const render = () => {
       state.frame = requestAnimationFrame(render)
       controls.update()
+      for (const child of contextModel.children) {
+        if (!(child instanceof THREE.Sprite)) continue
+        const width = child.userData.baseLabelWidth as number
+        const distanceScale = THREE.MathUtils.clamp(
+          camera.position.distanceTo(child.position) / 6000,
+          0.22,
+          1.25,
+        )
+        child.scale.set(width * distanceScale, width * 96 / 512 * distanceScale, 1)
+      }
       renderer.render(scene, camera)
     }
     render()
@@ -213,11 +255,18 @@ export function TerrainScene({
       terrain: selected.terrain,
       terrainMinimum: selected.terrainMinimumMetres,
       verticalExaggeration: renderExaggeration,
+      waterDepthExaggeration,
+      waterBaseOffset: dimension === '2d' ? 4 : 0.35,
     }
     const terrainGeometry = buildTerrainGeometry(options)
+    if (basemapTexture) {
+      basemapTexture.anisotropy = state.renderer.capabilities.getMaxAnisotropy()
+    }
+    const mappedCity = view === 'city' && showBasemap ? basemapTexture : null
     const terrainMaterial = new THREE.MeshStandardMaterial({
       vertexColors: view !== 'city',
-      color: view === 'city' ? '#29413e' : '#ffffff',
+      color: view === 'city' ? (mappedCity ? '#b8c2ba' : '#29413e') : '#ffffff',
+      map: mappedCity || null,
       roughness: 0.96,
       metalness: 0,
       side: THREE.DoubleSide,
@@ -228,7 +277,6 @@ export function TerrainScene({
       const geometry = view === 'agreement'
         ? buildAgreementGeometry(options, data.maximumDepth, data.agreement)
         : buildWaterGeometry(options, view === 'city' ? data.medianDepth : selected.depth, threshold)
-      if (dimension === '2d') geometry.translate(0, 4, 0)
       const material = new THREE.MeshPhysicalMaterial({
         vertexColors: true,
         transparent: true,
@@ -242,7 +290,18 @@ export function TerrainScene({
       waterMesh.renderOrder = 5
       state.terrainModel.add(waterMesh)
     }
-  }, [data, dimension, renderExaggeration, selected, showWater, threshold, view])
+  }, [
+    basemapTexture,
+    data,
+    dimension,
+    renderExaggeration,
+    selected,
+    showBasemap,
+    showWater,
+    threshold,
+    view,
+    waterDepthExaggeration,
+  ])
 
   useEffect(() => {
     const state = sceneRef.current
@@ -262,6 +321,7 @@ export function TerrainScene({
         vertexColors: true,
         roughness: 0.88,
         metalness: 0,
+        side: THREE.DoubleSide,
       })
       state.contextModel.add(new THREE.Mesh(geometry, material))
     }

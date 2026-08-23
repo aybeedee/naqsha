@@ -56,7 +56,9 @@ export function App() {
   const [dimension, setDimension] = useState<Dimension>('3d')
   const [threshold, setThreshold] = useState(0.1)
   const [verticalExaggeration, setVerticalExaggeration] = useState(1)
+  const [waterDepthExaggeration, setWaterDepthExaggeration] = useState(6)
   const [showWater, setShowWater] = useState(true)
+  const [showBasemap, setShowBasemap] = useState(true)
   const [showBuildings, setShowBuildings] = useState(true)
   const [showNetwork, setShowNetwork] = useState(true)
   const [showLabels, setShowLabels] = useState(true)
@@ -235,7 +237,23 @@ export function App() {
               onChange={(event) => setVerticalExaggeration(Number(event.target.value))}
             />
           </label>
+          <label className={dimension === '2d' ? 'range-control disabled' : 'range-control'}>
+            <span>
+              <b>Flood height display</b>
+              <output>{dimension === '2d' ? 'plan view' : `${waterDepthExaggeration}× visual`}</output>
+            </span>
+            <input
+              type="range"
+              min="1"
+              max="12"
+              step="1"
+              value={waterDepthExaggeration}
+              disabled={dimension === '2d'}
+              onChange={(event) => setWaterDepthExaggeration(Number(event.target.value))}
+            />
+          </label>
           <div className="layer-controls">
+            <Toggle checked={showBasemap} label="OSM basemap" helper="Live, browser-cached tiles" onChange={setShowBasemap} />
             <Toggle checked={showWater} label="Flood depth" helper="Modelled maximum" onChange={setShowWater} />
             <Toggle checked={showBuildings} label="Buildings" helper="Footprints; proxy heights" onChange={setShowBuildings} />
             <Toggle checked={showNetwork} label="Street network" helper="Roads, rail and water" onChange={setShowNetwork} />
@@ -245,6 +263,7 @@ export function App() {
 
         <section className="provenance">
           <p>SFINCS 2.4.0 · EPSG:32643 · 28.66 m cells</p>
+          <p>Flood volume height is display-exaggerated in 3D</p>
           <p>19,302 building heights are an 8 m visual proxy</p>
         </section>
       </aside>
@@ -257,7 +276,9 @@ export function App() {
           dimension={dimension}
           threshold={threshold}
           verticalExaggeration={verticalExaggeration}
+          waterDepthExaggeration={waterDepthExaggeration}
           showWater={showWater}
+          showBasemap={showBasemap}
           showBuildings={showBuildings}
           showNetwork={showNetwork}
           showLabels={showLabels}
@@ -266,7 +287,7 @@ export function App() {
         <div className="viewport-title">
           <p className="eyebrow">
             {view === 'city'
-              ? `Urban context · ensemble median · ${Math.round(threshold * 100)} cm threshold`
+              ? `Urban context · ensemble median · ${Math.round(threshold * 100)} cm threshold${dimension === '3d' ? ` · flood height ${waterDepthExaggeration}× visual` : ''}`
               : `Maximum inundation · ${view === 'agreement' ? '10 cm agreement threshold' : `${Math.round(threshold * 100)} cm display threshold`}`}
           </p>
           <h1>{viewLabel(data, view)}</h1>

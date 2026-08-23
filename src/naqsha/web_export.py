@@ -9,6 +9,7 @@ from pathlib import Path
 
 import numpy as np
 import rasterio
+from rasterio.warp import transform_bounds
 
 
 def write_float32(path: Path, values: np.ndarray) -> None:
@@ -22,12 +23,19 @@ def write_uint8(path: Path, values: np.ndarray) -> None:
 def _read_raster(path: Path) -> tuple[np.ndarray, dict]:
     with rasterio.open(path) as dataset:
         values = dataset.read(1, masked=True).astype("float32").filled(np.nan)
+        crs = dataset.crs.to_string() if dataset.crs else None
+        bounds = list(dataset.bounds)
         metadata = {
             "width": dataset.width,
             "height": dataset.height,
-            "crs": dataset.crs.to_string() if dataset.crs else None,
+            "crs": crs,
             "transform": list(dataset.transform)[:6],
-            "bounds": list(dataset.bounds),
+            "bounds": bounds,
+            "geographicBounds": (
+                list(transform_bounds(crs, "EPSG:4326", *bounds, densify_pts=21))
+                if crs
+                else None
+            ),
             "cellSizeMetres": abs(float(dataset.transform.a)),
         }
     return values, metadata

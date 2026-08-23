@@ -23,7 +23,9 @@ The terrain audit:
 8. packages those grids into compact browser assets and presents them in an
    uncertainty-first Three.js viewer;
 9. adds a frozen public-data city layer with 19,329 building footprints, 3,914
-   mapped road/rail/water segments, and recognizable Lahore labels.
+   mapped road/rail/water segments, and recognizable Lahore labels;
+10. optionally drapes live OSM cartography over the terrain and renders maximum
+    flood depth as an explicitly display-exaggerated 3D volume.
 
 The included boundary is a **provisional technical test area** around the
 Gulberg–Liberty corridor. It is not yet the final hydraulic pilot.

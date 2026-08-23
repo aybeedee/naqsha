@@ -27,6 +27,11 @@ teal in all three. A cell shown in one member is not a verified flooded place.
 - Scenario forcing is shown read-only, with the experimental warning and
   evidence resolution always visible.
 - Buildings, network, labels, and flood depth can be hidden independently.
+- The optional OSM Carto basemap loads only the displayed AOI at one zoom.
+  Browser HTTP caching is respected; failure falls back to local vector data.
+- Three-dimensional flood areas have raised surfaces and darker perimeter
+  walls. Flood-height exaggeration is display-only, is disclosed in the
+  viewport, and never changes stored depths.
 
 Building footprints and streets are real public map features, but nearly all
 building heights are an 8 m rendering proxy. Buildings are not yet hydraulic
@@ -56,6 +61,22 @@ building height/source arrays, network polylines with class/width metadata, and
 decluttered labels. It is about 1.2 MB. Its acquisition, interpretation limits,
 and ODbL obligations are documented in [the urban-context decision](urban-context.md).
 
+`grid.geographicBounds` georeferences the optional browser basemap to the UTM
+terrain mesh. Rendered OSM tiles are not downloaded into or redistributed with
+the repository.
+
+## Live basemap policy
+
+The default template is `https://tile.openstreetmap.org/{z}/{x}/{y}.png`. It
+can be replaced at build time with `VITE_OSM_TILE_URL`; the URL is not used for
+offline prefetching. The viewer requests at most 36 tiles for this fixed AOI
+and one zoom, sends normal browser identification/referrer headers, leaves HTTP
+caching intact, and keeps attribution visible. This follows the
+[OpenStreetMap tile usage policy](https://operations.osmfoundation.org/policies/tiles/).
+
+Enabling the layer contacts OpenStreetMap's tile service from the user's
+browser. Disable **OSM basemap** to use only locally packaged context data.
+
 ## Run and verify
 
 ```bash
@@ -72,4 +93,5 @@ docker compose up --build viewer
 ```
 
 Then open `http://localhost:5173`. The static image serves the same precomputed
-assets through nginx; no backend is required for this vertical slice.
+assets through nginx; no Naqsha backend is required. Only the optional OSM
+basemap uses an external runtime service.

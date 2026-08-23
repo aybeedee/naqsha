@@ -75,7 +75,10 @@ export function buildBuildingGeometry(options: UrbanGeometryOptions): THREE.Buff
     const colour = sourceColours[source]
     const triangles = THREE.ShapeUtils.triangulateShape(points, [])
     for (const triangle of triangles) {
-      for (const index of triangle) {
+      // ShapeUtils triangles face -Y when its XY contour is mapped into our XZ
+      // ground plane. Reverse them so roof normals face upward and are not
+      // removed by normal front-face culling.
+      for (const index of [...triangle].reverse()) {
         const point = points[index]
         appendVertex(vertices, colours, point.x, base + height, point.y, colour)
       }

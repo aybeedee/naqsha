@@ -28,6 +28,7 @@ export interface GridMetadata {
   crs: string
   transform: number[]
   bounds: number[]
+  geographicBounds: number[]
   cellSizeMetres: number
   extentWidthMetres: number
   extentHeightMetres: number
