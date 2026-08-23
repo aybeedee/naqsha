@@ -1,0 +1,24 @@
+{
+  "type": "FeatureCollection",
+  "name": "central_lahore_candidate",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Central Lahore validation candidate",
+        "status": "preferred-validation-candidate-terrain-gate-failed",
+        "focus": "Lakshmi Chowk–GPO–Lawrence Road ponding cluster"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [74.3050, 31.5350],
+          [74.3450, 31.5350],
+          [74.3450, 31.5750],
+          [74.3050, 31.5750],
+          [74.3050, 31.5350]
+        ]]
+      }
+    }
+  ]
+}
