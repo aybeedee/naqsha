@@ -21,7 +21,9 @@ The terrain audit:
 7. runs the same synthetic storm through three pinned SFINCS 2.4.0 models and
    exports maximum-depth and terrain-agreement rasters;
 8. packages those grids into compact browser assets and presents them in an
-   uncertainty-first Three.js viewer.
+   uncertainty-first Three.js viewer;
+9. adds a frozen public-data city layer with 19,329 building footprints, 3,914
+   mapped road/rail/water segments, and recognizable Lahore labels.
 
 The included boundary is a **provisional technical test area** around the
 Gulberg–Liberty corridor. It is not yet the final hydraulic pilot.
@@ -82,6 +84,11 @@ the viewer without rerunning SFINCS. To regenerate them from local hydraulic
 artifacts, run `make web-export-local`. A containerized production build is
 available with `docker compose up --build viewer` (or `docker-compose` on an
 older Compose installation). See the [viewer design and data contract](docs/web-viewer.md).
+
+The checked-in city extract is sufficient to run the app. To reproduce it from
+the public Overture and OpenStreetMap sources, follow the
+[urban-context decision](docs/urban-context.md) or run the three
+`make urban-context-*` targets documented there.
 
 Run the automated tests with:
 

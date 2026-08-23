@@ -1,11 +1,13 @@
 COMPOSE := $(shell docker compose version >/dev/null 2>&1 && echo "docker compose" || echo "docker-compose")
 
-.PHONY: build audit compare ensemble central-ensemble elevation-control hydraulic-build hydraulic-run hydraulic-results web-export web-export-local web-install web-dev web-test web-build test audit-local compare-local ensemble-local central-ensemble-local elevation-control-local hydraulic-build-local hydraulic-results-local test-local lint-local
+.PHONY: build audit compare ensemble central-ensemble elevation-control hydraulic-build hydraulic-run hydraulic-results urban-context-install urban-context-download urban-context-export-local web-export web-export-local web-install web-dev web-test web-build test audit-local compare-local ensemble-local central-ensemble-local elevation-control-local hydraulic-build-local hydraulic-results-local test-local lint-local
 
 HYDRAULIC_MODELS := artifacts/hydraulic-ensemble/rain100mm-2h-loss5
 HYDRAULIC_RESULTS := artifacts/hydraulic-results/rain100mm-2h-loss5
 SFINCS_IMAGE := deltares/sfincs-cpu:sfincs-v2.4.0-Galibier-Release
 WEB_SCENARIO := web/public/scenarios/rain100mm-2h-loss5
+URBAN_RAW := data/raw/urban-context
+URBAN_CONTEXT := web/public/context/central-lahore
 
 build:
 	$(COMPOSE) build terrain-audit
@@ -35,6 +37,17 @@ hydraulic-run:
 
 hydraulic-results:
 	$(COMPOSE) run --rm terrain-audit python -m naqsha.hydraulic_results --models $(HYDRAULIC_MODELS) --output $(HYDRAULIC_RESULTS)
+
+urban-context-install:
+	.venv/bin/pip install -e '.[dev,context]'
+
+urban-context-download:
+	mkdir -p $(URBAN_RAW)
+	.venv/bin/overturemaps download --bbox=74.305,31.535,74.345,31.575 -f geojson --type=building -o $(URBAN_RAW)/buildings.geojson
+	curl --fail --silent --show-error --request POST --data-urlencode 'data=[out:json][timeout:180];(way[highway](31.535,74.305,31.575,74.345);way[railway](31.535,74.305,31.575,74.345);way[waterway](31.535,74.305,31.575,74.345);way[natural=water](31.535,74.305,31.575,74.345);way[leisure=park](31.535,74.305,31.575,74.345);node[name](31.535,74.305,31.575,74.345););out geom;' https://overpass-api.de/api/interpreter --output $(URBAN_RAW)/osm-context.json
+
+urban-context-export-local:
+	.venv/bin/python -m naqsha.urban_context --buildings $(URBAN_RAW)/buildings.geojson --osm $(URBAN_RAW)/osm-context.json --scenario $(WEB_SCENARIO)/scenario.json --output $(URBAN_CONTEXT)
 
 web-export:
 	$(COMPOSE) run --rm terrain-audit python -m naqsha.web_export --models $(HYDRAULIC_MODELS) --results $(HYDRAULIC_RESULTS) --output $(WEB_SCENARIO)

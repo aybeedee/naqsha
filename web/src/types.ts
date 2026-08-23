@@ -1,5 +1,6 @@
 export type MemberId = 'copernicus' | 'fabdem' | 'srtm'
-export type ViewId = MemberId | 'agreement'
+export type ViewId = MemberId | 'agreement' | 'city'
+export type Dimension = '2d' | '3d'
 
 export interface MemberMetrics {
   analysed_cell_count: number
@@ -83,4 +84,65 @@ export interface ScenarioData {
   agreement: Uint8Array
   members: MemberGrid[]
   maximumDepth: Float32Array
+  medianDepth: Float32Array
+}
+
+export interface LineClass {
+  id: number
+  name: string
+  widthMetres: number
+  colour: string
+}
+
+export interface UrbanLabel {
+  name: string
+  category: 'district' | 'road' | 'civic' | 'landmark' | 'station'
+  priority: number
+  x: number
+  z: number
+}
+
+export interface UrbanContextMetadata {
+  schemaVersion: number
+  crs: string
+  origin: { easting: number; northing: number }
+  buildings: {
+    count: number
+    coordinateFile: string
+    indexFile: string
+    heightFile: string
+    heightSourceFile: string
+    sourceFile: string
+    sourceCounts: Record<string, number>
+    measuredOrTaggedHeightCount: number
+    inferredHeightCount: number
+    inferredHeightMetres: number
+  }
+  network: {
+    count: number
+    coordinateFile: string
+    indexFile: string
+    classes: LineClass[]
+  }
+  labels: UrbanLabel[]
+  provenance: {
+    overtureRelease: string
+    osmTimestamp: string
+    buildingThemeLicense: string
+    buildingSources: string[]
+    networkSource: string
+    networkLicense: string
+    warning: string
+  }
+}
+
+export interface UrbanContextData {
+  metadata: UrbanContextMetadata
+  buildingCoordinates: Float32Array
+  buildingIndex: Uint32Array
+  buildingHeights: Float32Array
+  buildingHeightSource: Uint8Array
+  buildingSource: Uint8Array
+  networkCoordinates: Float32Array
+  networkIndex: Uint32Array
 }

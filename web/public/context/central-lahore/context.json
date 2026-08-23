@@ -1,0 +1,429 @@
+{
+  "schemaVersion": 1,
+  "crs": "EPSG:32643",
+  "origin": {
+    "easting": 435930.7552658547,
+    "northing": 3491304.1452965257
+  },
+  "buildings": {
+    "count": 19329,
+    "coordinateFile": "buildings.xy.f32",
+    "indexFile": "buildings.index.u32",
+    "heightFile": "buildings.height.f32",
+    "heightSourceFile": "buildings.height-source.u8",
+    "sourceFile": "buildings.source.u8",
+    "sourceCounts": {
+      "Google Open Buildings": 10459,
+      "Microsoft ML Buildings": 7871,
+      "OpenStreetMap": 999
+    },
+    "measuredOrTaggedHeightCount": 27,
+    "inferredHeightCount": 19302,
+    "inferredHeightMetres": 8
+  },
+  "network": {
+    "count": 3914,
+    "coordinateFile": "network.xy.f32",
+    "indexFile": "network.index.u32",
+    "classes": [
+      {
+        "id": 0,
+        "name": "trunk",
+        "widthMetres": 18,
+        "colour": "#e1ad68"
+      },
+      {
+        "id": 1,
+        "name": "primary",
+        "widthMetres": 14,
+        "colour": "#d7a768"
+      },
+      {
+        "id": 2,
+        "name": "secondary",
+        "widthMetres": 11,
+        "colour": "#c9a270"
+      },
+      {
+        "id": 3,
+        "name": "tertiary",
+        "widthMetres": 8,
+        "colour": "#a99b7c"
+      },
+      {
+        "id": 4,
+        "name": "local",
+        "widthMetres": 5,
+        "colour": "#748889"
+      },
+      {
+        "id": 5,
+        "name": "service",
+        "widthMetres": 3,
+        "colour": "#536d72"
+      },
+      {
+        "id": 6,
+        "name": "pedestrian",
+        "widthMetres": 2,
+        "colour": "#496268"
+      },
+      {
+        "id": 7,
+        "name": "railway",
+        "widthMetres": 5,
+        "colour": "#bd8268"
+      },
+      {
+        "id": 8,
+        "name": "waterway",
+        "widthMetres": 7,
+        "colour": "#398da2"
+      },
+      {
+        "id": 9,
+        "name": "park",
+        "widthMetres": 3,
+        "colour": "#4f8b72"
+      }
+    ]
+  },
+  "labels": [
+    {
+      "name": "Civil Lines",
+      "category": "district",
+      "priority": 110,
+      "x": 1002.03,
+      "z": -730.43
+    },
+    {
+      "name": "Lahore",
+      "category": "district",
+      "priority": 110,
+      "x": -1014.05,
+      "z": -1196.25
+    },
+    {
+      "name": "Anarkali",
+      "category": "district",
+      "priority": 100,
+      "x": -1653.14,
+      "z": -1451.04
+    },
+    {
+      "name": "Bibi Pak Daman",
+      "category": "district",
+      "priority": 100,
+      "x": 1263.62,
+      "z": -1074.99
+    },
+    {
+      "name": "Donald Town",
+      "category": "district",
+      "priority": 100,
+      "x": 330.81,
+      "z": -840.39
+    },
+    {
+      "name": "G.O.R.",
+      "category": "district",
+      "priority": 100,
+      "x": 1592.46,
+      "z": 1109.76
+    },
+    {
+      "name": "Gawalmandi",
+      "category": "district",
+      "priority": 100,
+      "x": -644.33,
+      "z": -1935.51
+    },
+    {
+      "name": "Mozang",
+      "category": "district",
+      "priority": 100,
+      "x": -1025.53,
+      "z": 126.83
+    },
+    {
+      "name": "Qila Gujjar Singh",
+      "category": "district",
+      "priority": 100,
+      "x": 437.12,
+      "z": -1593.65
+    },
+    {
+      "name": "Saadi Park",
+      "category": "district",
+      "priority": 100,
+      "x": -1187.09,
+      "z": 408.9
+    },
+    {
+      "name": "Shadman",
+      "category": "district",
+      "priority": 100,
+      "x": 182.15,
+      "z": 1634.45
+    },
+    {
+      "name": "Urdu Bazaar",
+      "category": "district",
+      "priority": 100,
+      "x": -1440.31,
+      "z": -2231.71
+    },
+    {
+      "name": "Lakshmi",
+      "category": "station",
+      "priority": 94,
+      "x": 224.51,
+      "z": -1513.32
+    },
+    {
+      "name": "Railway Station",
+      "category": "station",
+      "priority": 94,
+      "x": 1075.36,
+      "z": -1916.7
+    },
+    {
+      "name": "Iqbal Museum",
+      "category": "landmark",
+      "priority": 90,
+      "x": 1469.07,
+      "z": -1565.36
+    },
+    {
+      "name": "Lahore City Museum",
+      "category": "landmark",
+      "priority": 90,
+      "x": -1464.02,
+      "z": -1468.87
+    },
+    {
+      "name": "Amrit Park",
+      "category": "district",
+      "priority": 88,
+      "x": 515.91,
+      "z": -1383.58
+    },
+    {
+      "name": "Dhobi Mandi",
+      "category": "district",
+      "priority": 88,
+      "x": -1380.08,
+      "z": -1271.21
+    },
+    {
+      "name": "Broom Hostel",
+      "category": "civic",
+      "priority": 86,
+      "x": -541.86,
+      "z": -1323.25
+    },
+    {
+      "name": "Fatima Jinnah Medical University",
+      "category": "civic",
+      "priority": 86,
+      "x": -511.25,
+      "z": -23.69
+    },
+    {
+      "name": "Government College University-GCU",
+      "category": "civic",
+      "priority": 86,
+      "x": -1530.54,
+      "z": -1844.98
+    },
+    {
+      "name": "Government Jinnah Degree College for Women",
+      "category": "civic",
+      "priority": 86,
+      "x": -721.86,
+      "z": 407.65
+    },
+    {
+      "name": "National University of Modern Languages, Lahore",
+      "category": "civic",
+      "priority": 86,
+      "x": 505.03,
+      "z": -598.38
+    },
+    {
+      "name": "Punjab Judicial Academy",
+      "category": "civic",
+      "priority": 86,
+      "x": -937.76,
+      "z": -778.72
+    },
+    {
+      "name": "Punjab University Cricket Ground",
+      "category": "civic",
+      "priority": 86,
+      "x": -1721.71,
+      "z": -633.58
+    },
+    {
+      "name": "Virtual University of Pakistan",
+      "category": "civic",
+      "priority": 86,
+      "x": 288.14,
+      "z": 605.29
+    },
+    {
+      "name": "Akhavan House",
+      "category": "landmark",
+      "priority": 84,
+      "x": 1406.04,
+      "z": -139.37
+    },
+    {
+      "name": "Cathedral Monument",
+      "category": "landmark",
+      "priority": 84,
+      "x": -815.44,
+      "z": -1027.99
+    },
+    {
+      "name": "Chajju Da Chaubara",
+      "category": "landmark",
+      "priority": 84,
+      "x": -847.36,
+      "z": -1832.32
+    },
+    {
+      "name": "Darbar Bibi Fatima Kalan",
+      "category": "landmark",
+      "priority": 84,
+      "x": -1507.26,
+      "z": -865.28
+    },
+    {
+      "name": "Donald McLeod Memorial",
+      "category": "landmark",
+      "priority": 84,
+      "x": -714.96,
+      "z": -1224.01
+    },
+    {
+      "name": "Gunbad Kambohan",
+      "category": "landmark",
+      "priority": 84,
+      "x": 1136.13,
+      "z": -1664.78
+    },
+    {
+      "name": "Canal Bank Road",
+      "category": "road",
+      "priority": 76,
+      "x": 1659.06,
+      "z": 2081.26
+    },
+    {
+      "name": "Ambulance Road",
+      "category": "road",
+      "priority": 69,
+      "x": 1068.59,
+      "z": 1818.3
+    },
+    {
+      "name": "Cust Road",
+      "category": "road",
+      "priority": 69,
+      "x": -1546.33,
+      "z": -626.66
+    },
+    {
+      "name": "Firozpur Road",
+      "category": "road",
+      "priority": 69,
+      "x": -509.32,
+      "z": 1954.15
+    },
+    {
+      "name": "Lake Road",
+      "category": "road",
+      "priority": 69,
+      "x": -1724.75,
+      "z": -375.82
+    },
+    {
+      "name": "Lower Mall",
+      "category": "road",
+      "priority": 69,
+      "x": -1745.24,
+      "z": -2146.88
+    },
+    {
+      "name": "Mall Road",
+      "category": "road",
+      "priority": 69,
+      "x": -1883.7,
+      "z": -1646.44
+    },
+    {
+      "name": "Sheikh Abdul Qadir Jillani Road",
+      "category": "road",
+      "priority": 69,
+      "x": -1855.77,
+      "z": -2012.98
+    },
+    {
+      "name": "Abbott Road",
+      "category": "road",
+      "priority": 62,
+      "x": 468.67,
+      "z": -1128.45
+    },
+    {
+      "name": "Ashaq Hussain Road",
+      "category": "road",
+      "priority": 62,
+      "x": -95.93,
+      "z": 1820.2
+    },
+    {
+      "name": "Bahawalpur Road",
+      "category": "road",
+      "priority": 62,
+      "x": -1482.14,
+      "z": 456.98
+    },
+    {
+      "name": "Bansaanwala Bazaar",
+      "category": "road",
+      "priority": 62,
+      "x": -741.14,
+      "z": -2097.55
+    },
+    {
+      "name": "Cooper Road",
+      "category": "road",
+      "priority": 62,
+      "x": 33.2,
+      "z": -995.75
+    },
+    {
+      "name": "Durand Road",
+      "category": "road",
+      "priority": 62,
+      "x": 1439.29,
+      "z": -804.93
+    }
+  ],
+  "provenance": {
+    "overtureRelease": "2026-08-19.0",
+    "osmTimestamp": "2026-08-23T20:24:49Z",
+    "buildingThemeLicense": "ODbL-1.0",
+    "buildingSources": [
+      "OpenStreetMap contributors",
+      "Google Open Buildings",
+      "Microsoft Global ML Building Footprints",
+      "Overture Maps Foundation"
+    ],
+    "networkSource": "OpenStreetMap contributors",
+    "networkLicense": "ODbL-1.0",
+    "warning": "Building footprints are public map/ML observations. Most extrusion heights are an explicit 8 m visual proxy and are not surveyed building heights."
+  }
+}

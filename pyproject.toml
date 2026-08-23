@@ -20,6 +20,9 @@ dev = [
   "pytest>=8,<9",
   "ruff>=0.12,<1",
 ]
+context = [
+  "overturemaps==1.0.1",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
