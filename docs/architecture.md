@@ -29,8 +29,9 @@ data preparation.
 - Rainfall is represented by total, duration, and temporal profile.
 - Unknown underground drainage is represented by explicit sensitivity cases,
   not an invented network.
-- SFINCS is the planned primary solver; precomputed results provide instant UI
-  response.
+- SFINCS 2.4.0 is the primary experimental solver; precomputed results will
+  provide instant UI response. The release image is pinned rather than using
+  Docker's mutable `latest` tag.
 - Predefined surface and pump interventions are precomputed for the MVP.
 
 ## Provenance rules
@@ -43,4 +44,3 @@ Every derived artifact must include:
 - source and output cell size;
 - processing parameters;
 - a warning when output resolution exceeds evidence resolution.
-

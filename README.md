@@ -17,7 +17,9 @@ The terrain audit:
 5. compares the raw Copernicus surface against FABDEM's building/forest-removed
    derivative to measure how strongly conditioning changes local routing;
 6. tests all three surfaces against the one public ICESat-2 ATL08 pass found
-   crossing the central Lahore candidate.
+   crossing the central Lahore candidate;
+7. runs the same synthetic storm through three pinned SFINCS 2.4.0 models and
+   exports maximum-depth and terrain-agreement rasters.
 
 The included boundary is a **provisional technical test area** around the
 Gulberg–Liberty corridor. It is not yet the final hydraulic pilot.
@@ -49,6 +51,22 @@ ICESat-2 pass. The raw CSV and generated outputs are ignored; the retrieval and
 quality-gate logic are versioned. Only eight in-bound estimates meet the
 liberal 5 m reported-uncertainty filter, so this is independent context rather
 than a substitute for a local DTM.
+
+The first experimental hydraulic slice is fully runnable with Colima/Docker:
+
+```bash
+make central-ensemble-local
+make hydraulic-build-local
+make hydraulic-run
+make hydraulic-results-local
+```
+
+It applies 100 mm over two hours, followed by two hours of recession, with a
+uniform 5 mm/h effective surface-loss sensitivity. These are synthetic,
+uncalibrated assumptions. Results are written under
+`artifacts/hydraulic-results/rain100mm-2h-loss5/`; see the
+[hydraulic ensemble decision](docs/experimental-hydraulic-ensemble.md) before
+interpreting them.
 
 Run the automated tests with:
 
