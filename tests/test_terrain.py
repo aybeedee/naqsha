@@ -56,7 +56,7 @@ def test_audit_with_local_synthetic_raster(tmp_path: Path):
         )
     )
     source = tmp_path / "source.tif"
-    values = np.linspace(200, 210, 200 * 200, dtype="float32").reshape(200, 200)
+    values = np.linspace(200, 210, 200 * 200, dtype="int16").reshape(200, 200)
     with rasterio.open(
         source,
         "w",
@@ -64,7 +64,7 @@ def test_audit_with_local_synthetic_raster(tmp_path: Path):
         height=200,
         width=200,
         count=1,
-        dtype="float32",
+        dtype="int16",
         crs="EPSG:4326",
         transform=from_origin(74.30, 31.57, 0.0004, 0.0004),
     ) as dataset:

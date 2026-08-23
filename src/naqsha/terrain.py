@@ -90,8 +90,9 @@ def reproject_clip(source: np.ma.MaskedArray, source_transform, source_crs):
         source_crs, OUTPUT_CRS, source.shape[1], source.shape[0], left, bottom, right, top
     )
     destination = np.full((height, width), np.nan, dtype="float32")
+    floating_source = source.astype("float32").filled(np.nan)
     reproject(
-        source=np.asarray(source.filled(np.nan), dtype="float32"),
+        source=floating_source,
         destination=destination,
         src_transform=source_transform,
         src_crs=source_crs,
@@ -251,7 +252,7 @@ def audit(
     output_dir.mkdir(parents=True, exist_ok=True)
     rasterio_env = {
         "GDAL_DISABLE_READDIR_ON_OPEN": "EMPTY_DIR",
-        "CPL_VSIL_CURL_ALLOWED_EXTENSIONS": ".tif",
+        "CPL_VSIL_CURL_ALLOWED_EXTENSIONS": ".tif,.hgt,.gz",
     }
     with rasterio.Env(**rasterio_env), rasterio.open(source_url) as dataset:
         clipped, source_transform, source_crs = _clip_source(dataset, geometry)

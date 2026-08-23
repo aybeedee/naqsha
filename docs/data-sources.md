@@ -4,6 +4,7 @@
 |---|---|---:|---|
 | Terrain | Copernicus GLO-30 DSM | 30 m | Surface heights and vertical noise; not street-grade DTM |
 | Conditioned terrain | FABDEM 1.2 | 30 m | Derived from Copernicus; non-commercial licence and not an independent survey |
+| Independent terrain lineage | AWS Terrain Tiles SRTM-family HGT | 30 m | Radar surface model; urban objects and void-filling artefacts remain |
 | Land cover | ESA WorldCover 2021 | 10 m | Global classes need local imperviousness checks |
 | Buildings | OpenStreetMap / open building footprints | feature-level | Completeness and offsets vary |
 | Roads/water | OpenStreetMap / HDX extracts | feature-level | Drainage network is likely incomplete |

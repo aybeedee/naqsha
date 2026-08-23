@@ -37,6 +37,10 @@ Run the conditioning comparison with `make compare` (container) or
 non-commercial use; it is an evaluation input, not yet an unconditional
 production dependency.
 
+Run the three-surface screening-stability gate with `make ensemble` or
+`make ensemble-local`. This adds the AWS open SRTM-family terrain surface and
+reports whether broad low-area rankings persist across all three inputs.
+
 Run the automated tests with:
 
 ```bash
