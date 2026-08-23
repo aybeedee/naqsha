@@ -15,7 +15,9 @@ The terrain audit:
 4. writes a clipped GeoTIFF, hillshade, machine-readable metrics, and a short
    Markdown quality report;
 5. compares the raw Copernicus surface against FABDEM's building/forest-removed
-   derivative to measure how strongly conditioning changes local routing.
+   derivative to measure how strongly conditioning changes local routing;
+6. tests all three surfaces against the one public ICESat-2 ATL08 pass found
+   crossing the central Lahore candidate.
 
 The included boundary is a **provisional technical test area** around the
 Gulberg–Liberty corridor. It is not yet the final hydraulic pilot.
@@ -40,6 +42,13 @@ production dependency.
 Run the three-surface screening-stability gate with `make ensemble` or
 `make ensemble-local`. This adds the AWS open SRTM-family terrain surface and
 reports whether broad low-area rankings persist across all three inputs.
+
+After generating the central Lahore terrain ensemble, run
+`make elevation-control-local` to download and audit the 28 August 2025
+ICESat-2 pass. The raw CSV and generated outputs are ignored; the retrieval and
+quality-gate logic are versioned. Only eight in-bound estimates meet the
+liberal 5 m reported-uncertainty filter, so this is independent context rather
+than a substitute for a local DTM.
 
 Run the automated tests with:
 
