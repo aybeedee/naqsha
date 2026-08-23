@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "id": "rain100mm-2h-loss5",
+  "label": "100 mm / 2 h stress test",
+  "status": "experimental_non_authoritative",
+  "warning": "Terrain-source disagreement dominates this experiment. Do not interpret mapped cells as authoritative street or property flood depths.",
+  "location": "Central Lahore \u2014 Lakshmi Chowk / GPO / Lawrence Road candidate",
+  "grid": {
+    "width": 134,
+    "height": 157,
+    "crs": "EPSG:32643",
+    "transform": [
+      28.662404047834265,
+      0.0,
+      434010.3741946498,
+      0.0,
+      -28.662404047834265,
+      3493554.1440142808
+    ],
+    "bounds": [
+      434010.3741946498,
+      3489054.1465787706,
+      437851.1363370596,
+      3493554.1440142808
+    ],
+    "cellSizeMetres": 28.662404047834265,
+    "extentWidthMetres": 3840.7621424098033,
+    "extentHeightMetres": 4499.9974355101585,
+    "activeFile": "active.u8"
+  },
+  "scenario": {
+    "rainfall_total_mm": 100,
+    "rainfall_duration_minutes": 120,
+    "recession_minutes": 120,
+    "effective_loss_rate_mm_per_hour": 5,
+    "manning_roughness": 0.06
+  },
+  "members": [
+    {
+      "id": "copernicus",
+      "label": "Copernicus GLO-30",
+      "terrainFile": "terrain-copernicus.f32",
+      "depthFile": "depth-copernicus.f32",
+      "metrics": {
+        "analysed_cell_count": 18659,
+        "flooded_area_over_5cm_km2": 2.909871323348226,
+        "flooded_area_over_10cm_km2": 2.397234478128211,
+        "flooded_area_over_30cm_km2": 1.5370890022542434,
+        "maximum_depth_m": 2.5449676513671875,
+        "wet_cell_depth_p95_m": 1.0140167474746704,
+        "integrated_maximum_depth_volume_proxy_m3": 1437125.875
+      },
+      "terrainMinimumMetres": 208.00540161132812,
+      "terrainMaximumMetres": 231.77239990234375
+    },
+    {
+      "id": "fabdem",
+      "label": "FABDEM v1.2",
+      "terrainFile": "terrain-fabdem.f32",
+      "depthFile": "depth-fabdem.f32",
+      "metrics": {
+        "analysed_cell_count": 18659,
+        "flooded_area_over_5cm_km2": 7.412695920545184,
+        "flooded_area_over_10cm_km2": 4.129848430963166,
+        "flooded_area_over_30cm_km2": 1.0425258919618574,
+        "maximum_depth_m": 2.3448333740234375,
+        "wet_cell_depth_p95_m": 0.45020753145217896,
+        "integrated_maximum_depth_volume_proxy_m3": 1446449.375
+      },
+      "terrainMinimumMetres": 210.76417541503906,
+      "terrainMaximumMetres": 226.80276489257812
+    },
+    {
+      "id": "srtm",
+      "label": "SRTM-family",
+      "terrainFile": "terrain-srtm.f32",
+      "depthFile": "depth-srtm.f32",
+      "metrics": {
+        "analysed_cell_count": 18659,
+        "flooded_area_over_5cm_km2": 2.062048848561278,
+        "flooded_area_over_10cm_km2": 1.6307438105155923,
+        "flooded_area_over_30cm_km2": 1.2298355084845551,
+        "maximum_depth_m": 4.6566619873046875,
+        "wet_cell_depth_p95_m": 1.566650390625,
+        "integrated_maximum_depth_volume_proxy_m3": 1444902.875
+      },
+      "terrainMinimumMetres": 193.8608856201172,
+      "terrainMaximumMetres": 248.44700622558594
+    }
+  ],
+  "agreement": {
+    "file": "wet-member-count.u8",
+    "thresholdMetres": 0.1,
+    "metrics": {
+      "member_count": 3,
+      "analysed_cell_count": 18659,
+      "union_flooded_area_over_10cm_km2": 6.556658111700223,
+      "intersection_flooded_area_over_10cm_km2": 0.150340613261639,
+      "all_member_wet_jaccard": 0.022929457461470994,
+      "terrain_sensitive_wet_fraction": 0.977070542538529,
+      "depth_range_p50_in_union_m": 0.2843780517578125,
+      "depth_range_p95_in_union_m": 1.1341552734375
+    }
+  },
+  "provenance": {
+    "solverImage": "deltares/sfincs-cpu:sfincs-v2.4.0-Galibier-Release",
+    "sourceModelDirectory": "artifacts/hydraulic-ensemble/rain100mm-2h-loss5",
+    "sourceResultDirectory": "artifacts/hydraulic-results/rain100mm-2h-loss5"
+  }
+}

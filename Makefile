@@ -1,10 +1,11 @@
 COMPOSE := $(shell docker compose version >/dev/null 2>&1 && echo "docker compose" || echo "docker-compose")
 
-.PHONY: build audit compare ensemble central-ensemble elevation-control hydraulic-build hydraulic-run hydraulic-results test audit-local compare-local ensemble-local central-ensemble-local elevation-control-local hydraulic-build-local hydraulic-results-local test-local lint-local
+.PHONY: build audit compare ensemble central-ensemble elevation-control hydraulic-build hydraulic-run hydraulic-results web-export web-export-local web-install web-dev web-test web-build test audit-local compare-local ensemble-local central-ensemble-local elevation-control-local hydraulic-build-local hydraulic-results-local test-local lint-local
 
 HYDRAULIC_MODELS := artifacts/hydraulic-ensemble/rain100mm-2h-loss5
 HYDRAULIC_RESULTS := artifacts/hydraulic-results/rain100mm-2h-loss5
 SFINCS_IMAGE := deltares/sfincs-cpu:sfincs-v2.4.0-Galibier-Release
+WEB_SCENARIO := web/public/scenarios/rain100mm-2h-loss5
 
 build:
 	$(COMPOSE) build terrain-audit
@@ -34,6 +35,24 @@ hydraulic-run:
 
 hydraulic-results:
 	$(COMPOSE) run --rm terrain-audit python -m naqsha.hydraulic_results --models $(HYDRAULIC_MODELS) --output $(HYDRAULIC_RESULTS)
+
+web-export:
+	$(COMPOSE) run --rm terrain-audit python -m naqsha.web_export --models $(HYDRAULIC_MODELS) --results $(HYDRAULIC_RESULTS) --output $(WEB_SCENARIO)
+
+web-export-local:
+	.venv/bin/python -m naqsha.web_export --models $(HYDRAULIC_MODELS) --results $(HYDRAULIC_RESULTS) --output $(WEB_SCENARIO)
+
+web-install:
+	npm --prefix web ci
+
+web-dev:
+	npm --prefix web run dev
+
+web-test:
+	npm --prefix web test
+
+web-build:
+	npm --prefix web run build
 
 test:
 	$(COMPOSE) run --rm terrain-audit pytest -q

@@ -12,8 +12,13 @@ open geodata -> versioned ETL -> hydraulic model -> scenario cube
                                                    |
                                       object storage / tile API
                                                    |
-                                         Cesium web client
+                                     WebGL web client
 ```
+
+The MVP client uses Three.js directly because its first job is comparing a
+small, fixed grid ensemble rather than streaming a city-scale globe. Cesium or
+3D Tiles remain options when the study area, basemap, or building inventory
+outgrows this bounded-grid design.
 
 ## Why terrain comes first
 
