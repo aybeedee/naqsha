@@ -43,24 +43,49 @@ def read_ascii_grid(path: Path, shape: tuple[int, int]) -> np.ndarray:
     return np.flipud(values)
 
 
-def read_active_binary_grid(path: Path, sfincs_mask: np.ndarray) -> np.ndarray:
-    """Read a SFINCS Fortran record and expand active values onto its regular grid."""
+def read_active_binary_records(
+    path: Path, sfincs_mask: np.ndarray, dtype: str = "<f4"
+) -> np.ndarray:
+    """Read SFINCS Fortran records and expand active values onto a regular grid."""
     payload = path.read_bytes()
     if len(payload) < 8:
         raise ValueError(f"SFINCS binary output is too short: {path}")
-    leading = int.from_bytes(payload[:4], byteorder="little", signed=True)
-    trailing = int.from_bytes(payload[-4:], byteorder="little", signed=True)
-    if leading != trailing or leading != len(payload) - 8:
-        raise ValueError(f"Invalid Fortran record markers in {path}")
-    values = np.frombuffer(payload[4:-4], dtype="<f4")
     active = sfincs_mask.ravel(order="F") > 0
-    if values.size != int(np.sum(active)):
-        raise ValueError(
-            f"Expected {int(np.sum(active))} active values, got {values.size} from {path}"
+    active_count = int(np.sum(active))
+    value_dtype = np.dtype(dtype)
+    expected_bytes = active_count * value_dtype.itemsize
+    records: list[np.ndarray] = []
+    offset = 0
+    while offset < len(payload):
+        if offset + 8 > len(payload):
+            raise ValueError(f"Truncated Fortran record in {path}")
+        leading = int.from_bytes(payload[offset : offset + 4], byteorder="little", signed=True)
+        record_end = offset + 4 + leading
+        if leading != expected_bytes or record_end + 4 > len(payload):
+            raise ValueError(
+                f"Expected {expected_bytes} record bytes, got {leading} from {path}"
+            )
+        trailing = int.from_bytes(
+            payload[record_end : record_end + 4], byteorder="little", signed=True
         )
-    flattened = np.full(sfincs_mask.size, np.nan, dtype="float32")
-    flattened[active] = values
-    return flattened.reshape(sfincs_mask.shape, order="F")
+        if trailing != leading:
+            raise ValueError(f"Invalid Fortran record markers in {path}")
+        values = np.frombuffer(payload, dtype=value_dtype, count=active_count, offset=offset + 4)
+        flattened = np.full(sfincs_mask.size, np.nan, dtype="float32")
+        flattened[active] = values
+        records.append(flattened.reshape(sfincs_mask.shape, order="F"))
+        offset = record_end + 4
+    if not records:
+        raise ValueError(f"No SFINCS binary records found in {path}")
+    return np.stack(records)
+
+
+def read_active_binary_grid(path: Path, sfincs_mask: np.ndarray) -> np.ndarray:
+    """Read one float32 SFINCS record and expand it onto its regular grid."""
+    records = read_active_binary_records(path, sfincs_mask)
+    if records.shape[0] != 1:
+        raise ValueError(f"Expected one SFINCS record, got {records.shape[0]} from {path}")
+    return records[0]
 
 
 def _expanded(mask: np.ndarray, radius: int) -> np.ndarray:

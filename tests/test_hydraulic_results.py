@@ -7,6 +7,7 @@ from naqsha.hydraulic_results import (
     analysis_mask,
     ensemble_statistics,
     read_active_binary_grid,
+    read_active_binary_records,
     read_ascii_grid,
 )
 
@@ -28,6 +29,19 @@ def test_read_active_binary_grid_uses_sfincs_column_major_indexing(tmp_path: Pat
     assert result[1, 0] == 20
     assert result[1, 1] == 30
     assert np.isnan(result[0, 1])
+
+
+def test_read_active_binary_records_supports_float64_timelines(tmp_path: Path):
+    source = tmp_path / "zs.dat"
+    first = np.array([10, 20, 30], dtype="<f8")
+    second = np.array([11, 21, 31], dtype="<f8")
+    marker = first.nbytes.to_bytes(4, byteorder="little", signed=True)
+    source.write_bytes(marker + first.tobytes() + marker + marker + second.tobytes() + marker)
+    mask = np.array([[1, 0], [1, 1]], dtype="uint8")
+    result = read_active_binary_records(source, mask, dtype="<f8")
+    assert result.shape == (2, 2, 2)
+    assert result[:, 1, 1].tolist() == [30, 31]
+    assert np.all(np.isnan(result[:, 0, 1]))
 
 
 def test_analysis_mask_excludes_outflow_buffer():

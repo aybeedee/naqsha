@@ -5,8 +5,9 @@
 The viewer is a communication and model-diagnostics slice, not a public flood
 warning product. It displays one precomputed synthetic storm over the central
 Lahore candidate. Its default **City** view combines a conditioned FABDEM ground
-surface, an ensemble-median maximum-depth display, public building footprints,
-the OSM street/infrastructure network, and recognizable place labels.
+surface, a time-varying ensemble-median depth display, public building footprints,
+the OSM street/infrastructure network, and recognizable place labels. A separate
+peak-envelope mode retains the maximum-depth diagnostic.
 
 The separate **Terrain agreement** layer answers a narrow question: for each model cell,
 how many of the Copernicus, FABDEM, and SRTM-family runs exceeded 10 cm maximum
@@ -22,6 +23,11 @@ teal in all three. A cell shown in one member is not a verified flooded place.
   depths.
 - The member-view depth slider hides values below a display threshold; it does
   not rerun or rescale the model.
+- The flood timeline exposes 25 solver snapshots at 10-minute intervals. Play,
+  pause, and scrub select actual instantaneous SFINCS output; they do not
+  interpolate or synthesize water motion between frames.
+- Peak envelope is the maximum reached at each cell, not a claim that every
+  displayed cell peaks simultaneously.
 - Agreement is fixed at the precomputed 10 cm threshold. The browser does not
   pretend it can recompute hydraulics from arbitrary rainfall inputs.
 - Scenario forcing is shown read-only, with the experimental warning and
@@ -49,12 +55,14 @@ endian row-major grid files:
 | --- | --- | --- |
 | `terrain-<member>.f32` | float32 metres | Model elevation for mesh vertices |
 | `depth-<member>.f32` | float32 metres | Maximum simulated water depth |
+| `timeline-depth-<member>.u16` | uint16 millimetres | 25 instantaneous depth frames |
 | `active.u8` | uint8 boolean | Cells shared by all terrain realizations |
 | `wet-member-count.u8` | uint8 0–3; 255 nodata | Members exceeding 10 cm |
 
 The manifest carries grid dimensions, CRS, affine transform, bounds, scenario
-forcing, member metrics, warning text, and solver provenance. The checked-in
-scenario is about 0.6 MB, so a tile service is unnecessary at this scale.
+forcing, timeline cadence and scale, member metrics, warning text, and solver
+provenance. The checked-in hydraulic scenario is about 3.6 MB, so a tile service
+is unnecessary at this scale.
 
 The parallel urban-context contract contains binary footprint rings, per-
 building height/source arrays, network polylines with class/width metadata, and

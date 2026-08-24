@@ -8,6 +8,7 @@ import { buildBuildingGeometry, buildNetworkGeometry, elevationAt } from './urba
 
 interface TerrainSceneProps {
   data: ScenarioData
+  displayDepth: Float32Array
   context: UrbanContextData
   view: ViewId
   dimension: Dimension
@@ -28,6 +29,7 @@ interface SceneState {
   renderer: THREE.WebGLRenderer
   controls: OrbitControls
   terrainModel: THREE.Group
+  waterModel: THREE.Group
   contextModel: THREE.Group
   resizeObserver: ResizeObserver
   frame: number
@@ -50,13 +52,13 @@ function resetCamera(state: SceneState, data: ScenarioData, dimension: Dimension
   state.controls.update()
 }
 
-function disposeMaterial(material: THREE.Material): void {
+function disposeMaterial(material: THREE.Material, disposeMap = true): void {
   const mapped = material as THREE.Material & { map?: THREE.Texture | null }
-  mapped.map?.dispose()
+  if (disposeMap) mapped.map?.dispose()
   material.dispose()
 }
 
-function disposeGroup(group: THREE.Group): void {
+function disposeGroup(group: THREE.Group, disposeMaps = true): void {
   for (const child of [...group.children]) {
     group.remove(child)
     if ('geometry' in child && child.geometry instanceof THREE.BufferGeometry) {
@@ -65,7 +67,7 @@ function disposeGroup(group: THREE.Group): void {
     if ('material' in child) {
       const material = child.material as THREE.Material | THREE.Material[]
       const materials = Array.isArray(material) ? material : [material]
-      materials.forEach(disposeMaterial)
+      materials.forEach((material) => disposeMaterial(material, disposeMaps))
     }
   }
 }
@@ -101,6 +103,7 @@ function createLabelSprite(label: UrbanLabel): THREE.Sprite {
 
 export function TerrainScene({
   data,
+  displayDepth,
   context,
   view,
   dimension,
@@ -184,8 +187,9 @@ export function TerrainScene({
     scene.add(gridHelper)
 
     const terrainModel = new THREE.Group()
+    const waterModel = new THREE.Group()
     const contextModel = new THREE.Group()
-    scene.add(terrainModel, contextModel)
+    scene.add(terrainModel, waterModel, contextModel)
 
     const resizeObserver = new ResizeObserver(() => {
       const width = host.clientWidth
@@ -202,6 +206,7 @@ export function TerrainScene({
       renderer,
       controls,
       terrainModel,
+      waterModel,
       contextModel,
       resizeObserver,
       frame: 0,
@@ -230,7 +235,8 @@ export function TerrainScene({
       cancelAnimationFrame(state.frame)
       resizeObserver.disconnect()
       controls.dispose()
-      disposeGroup(terrainModel)
+      disposeGroup(terrainModel, false)
+      disposeGroup(waterModel)
       disposeGroup(contextModel)
       base.geometry.dispose()
       disposeMaterial(base.material)
@@ -248,15 +254,13 @@ export function TerrainScene({
   useEffect(() => {
     const state = sceneRef.current
     if (!state) return
-    disposeGroup(state.terrainModel)
+    disposeGroup(state.terrainModel, false)
     const options = {
       grid: data.metadata.grid,
       active: data.active,
       terrain: selected.terrain,
       terrainMinimum: selected.terrainMinimumMetres,
       verticalExaggeration: renderExaggeration,
-      waterDepthExaggeration,
-      waterBaseOffset: dimension === '2d' ? 4 : 0.35,
     }
     const terrainGeometry = buildTerrainGeometry(options)
     if (basemapTexture) {
@@ -273,23 +277,6 @@ export function TerrainScene({
     })
     state.terrainModel.add(new THREE.Mesh(terrainGeometry, terrainMaterial))
 
-    if (showWater) {
-      const geometry = view === 'agreement'
-        ? buildAgreementGeometry(options, data.maximumDepth, data.agreement)
-        : buildWaterGeometry(options, view === 'city' ? data.medianDepth : selected.depth, threshold)
-      const material = new THREE.MeshPhysicalMaterial({
-        vertexColors: true,
-        transparent: true,
-        opacity: view === 'agreement' ? 0.88 : 0.72,
-        roughness: 0.16,
-        clearcoat: 0.4,
-        side: THREE.DoubleSide,
-        depthWrite: false,
-      })
-      const waterMesh = new THREE.Mesh(geometry, material)
-      waterMesh.renderOrder = 5
-      state.terrainModel.add(waterMesh)
-    }
   }, [
     basemapTexture,
     data,
@@ -297,6 +284,44 @@ export function TerrainScene({
     renderExaggeration,
     selected,
     showBasemap,
+    view,
+  ])
+
+  useEffect(() => {
+    const state = sceneRef.current
+    if (!state) return
+    disposeGroup(state.waterModel)
+    if (!showWater) return
+    const options = {
+      grid: data.metadata.grid,
+      active: data.active,
+      terrain: selected.terrain,
+      terrainMinimum: selected.terrainMinimumMetres,
+      verticalExaggeration: renderExaggeration,
+      waterDepthExaggeration,
+      waterBaseOffset: dimension === '2d' ? 4 : 0.35,
+    }
+    const geometry = view === 'agreement'
+      ? buildAgreementGeometry(options, data.maximumDepth, data.agreement)
+      : buildWaterGeometry(options, displayDepth, threshold)
+    const material = new THREE.MeshPhysicalMaterial({
+      vertexColors: true,
+      transparent: true,
+      opacity: view === 'agreement' ? 0.88 : 0.72,
+      roughness: 0.16,
+      clearcoat: 0.4,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    })
+    const waterMesh = new THREE.Mesh(geometry, material)
+    waterMesh.renderOrder = 5
+    state.waterModel.add(waterMesh)
+  }, [
+    data,
+    dimension,
+    displayDepth,
+    renderExaggeration,
+    selected,
     showWater,
     threshold,
     view,

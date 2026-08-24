@@ -22,6 +22,7 @@ class HydraulicScenario:
     recession_minutes: int
     effective_loss_rate_mm_per_hour: float
     manning_roughness: float = 0.06
+    output_interval_seconds: int = 600
 
     @property
     def rainfall_rate_mm_per_hour(self) -> float:
@@ -52,6 +53,8 @@ def validate_scenario(scenario: HydraulicScenario) -> None:
         raise ValueError("rainfall duration must be positive and recession cannot be negative")
     if scenario.effective_loss_rate_mm_per_hour < 0:
         raise ValueError("effective loss rate cannot be negative")
+    if not 0 < scenario.output_interval_seconds <= scenario.simulation_seconds:
+        raise ValueError("output interval must be within the simulation duration")
     if not 0 < scenario.manning_roughness <= 0.1:
         raise ValueError("Manning roughness must be in (0, 0.1]")
 
@@ -109,15 +112,16 @@ def _write_sfincs_input(path: Path, grid: ModelGrid, scenario: HydraulicScenario
         ("rotation", 0),
         ("epsg", 32643),
         ("inputformat", "asc"),
-        ("outputformat", "asc"),
+        ("outputformat", "bin"),
         ("depfile", "sfincs.dep"),
         ("mskfile", "sfincs.msk"),
         ("precipfile", "sfincs.prcp"),
         ("hmaxfile", "sfincs.hmax"),
+        ("zsfile", "zs.dat"),
         ("tref", "20250101 000000"),
         ("tstart", "20250101 000000"),
         ("tstop", stop.strftime("%Y%m%d %H%M%S")),
-        ("dtout", 0),
+        ("dtout", scenario.output_interval_seconds),
         ("dtmaxout", scenario.simulation_seconds),
         ("manning", f"{scenario.manning_roughness:.4f}"),
         ("qinf", f"{scenario.effective_loss_rate_mm_per_hour:.4f}"),
@@ -252,6 +256,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--recession-minutes", type=int, default=120)
     parser.add_argument("--effective-loss-rate", type=float, default=5)
     parser.add_argument("--manning", type=float, default=0.06)
+    parser.add_argument("--output-interval-seconds", type=int, default=600)
     return parser.parse_args()
 
 
@@ -263,6 +268,7 @@ def main() -> None:
         recession_minutes=args.recession_minutes,
         effective_loss_rate_mm_per_hour=args.effective_loss_rate,
         manning_roughness=args.manning,
+        output_interval_seconds=args.output_interval_seconds,
     )
     grids = build_ensemble(dict(args.surface), args.output, scenario)
     print(json.dumps({name: asdict(grid) for name, grid in grids.items()}, indent=2))

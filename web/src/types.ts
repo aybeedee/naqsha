@@ -1,6 +1,7 @@
 export type MemberId = 'copernicus' | 'fabdem' | 'srtm'
 export type ViewId = MemberId | 'agreement' | 'city'
 export type Dimension = '2d' | '3d'
+export type FloodMode = 'timeline' | 'maximum'
 
 export interface MemberMetrics {
   analysed_cell_count: number
@@ -17,6 +18,7 @@ export interface MemberMetadata {
   label: string
   terrainFile: string
   depthFile: string
+  timelineFile: string
   metrics: MemberMetrics
   terrainMinimumMetres: number
   terrainMaximumMetres: number
@@ -60,6 +62,14 @@ export interface ScenarioMetadata {
     recession_minutes: number
     effective_loss_rate_mm_per_hour: number
     manning_roughness: number
+    output_interval_seconds: number
+  }
+  timeline: {
+    frameCount: number
+    intervalSeconds: number
+    durationSeconds: number
+    depthScaleMetres: number
+    quantity: 'instantaneous_water_depth'
   }
   members: MemberMetadata[]
   agreement: {
@@ -77,6 +87,7 @@ export interface ScenarioMetadata {
 export interface MemberGrid extends MemberMetadata {
   terrain: Float32Array
   depth: Float32Array
+  timelineDepth: Uint16Array
 }
 
 export interface ScenarioData {

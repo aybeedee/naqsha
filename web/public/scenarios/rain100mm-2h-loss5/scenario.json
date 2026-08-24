@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "rain100mm-2h-loss5",
   "label": "100 mm / 2 h stress test",
   "status": "experimental_non_authoritative",
@@ -39,7 +39,15 @@
     "rainfall_duration_minutes": 120,
     "recession_minutes": 120,
     "effective_loss_rate_mm_per_hour": 5,
-    "manning_roughness": 0.06
+    "manning_roughness": 0.06,
+    "output_interval_seconds": 600
+  },
+  "timeline": {
+    "frameCount": 25,
+    "intervalSeconds": 600,
+    "durationSeconds": 14400,
+    "depthScaleMetres": 0.001,
+    "quantity": "instantaneous_water_depth"
   },
   "members": [
     {
@@ -47,6 +55,7 @@
       "label": "Copernicus GLO-30",
       "terrainFile": "terrain-copernicus.f32",
       "depthFile": "depth-copernicus.f32",
+      "timelineFile": "timeline-depth-copernicus.u16",
       "metrics": {
         "analysed_cell_count": 18659,
         "flooded_area_over_5cm_km2": 2.909871323348226,
@@ -64,6 +73,7 @@
       "label": "FABDEM v1.2",
       "terrainFile": "terrain-fabdem.f32",
       "depthFile": "depth-fabdem.f32",
+      "timelineFile": "timeline-depth-fabdem.u16",
       "metrics": {
         "analysed_cell_count": 18659,
         "flooded_area_over_5cm_km2": 7.412695920545184,
@@ -81,6 +91,7 @@
       "label": "SRTM-family",
       "terrainFile": "terrain-srtm.f32",
       "depthFile": "depth-srtm.f32",
+      "timelineFile": "timeline-depth-srtm.u16",
       "metrics": {
         "analysed_cell_count": 18659,
         "flooded_area_over_5cm_km2": 2.062048848561278,

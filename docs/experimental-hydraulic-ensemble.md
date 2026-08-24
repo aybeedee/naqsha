@@ -19,11 +19,19 @@ rainfall, regular-grid, infiltration, roughness, and outflow inputs used here.
 | Terrain cell size | 28.66 m |
 | Active cells per member | 20,342 |
 | Open outflow cells | 567 |
+| Map-output cadence | 10 minutes (25 frames) |
 
 The loss parameter uses SFINCS's constant infiltration term as a sensitivity
 proxy for unresolved surface losses. It is not a claim about soil infiltration
 or sewer capacity. The rain is a stress-test hyetograph, not a reconstructed
 historic Lahore event.
+
+Each member also stores instantaneous water surface every 600 seconds from
+simulation start through the four-hour stop time. The web exporter subtracts
+the member bed, restores north-up grid order, clips dry values to zero, and
+quantizes depth to millimetres. These frames show modeled buildup and recession.
+The separate maximum-depth grid remains a peak envelope: its cells do not
+necessarily reach their maxima at the same time.
 
 Every active cell beside an inactive/AOI cell is an open, zero-depth outflow
 boundary. Post-processing excludes a two-cell buffer around these boundaries,

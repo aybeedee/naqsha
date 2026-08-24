@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
-import { loadScenario, loadUrbanContext } from './data'
+import { loadScenario, loadUrbanContext, timelineDepthForView } from './data'
 import { TerrainScene } from './TerrainScene'
 import type {
   Dimension,
+  FloodMode,
   MemberGrid,
   ScenarioData,
   UrbanContextData,
@@ -54,6 +55,9 @@ export function App() {
   const [error, setError] = useState<string | null>(null)
   const [view, setView] = useState<ViewId>('city')
   const [dimension, setDimension] = useState<Dimension>('3d')
+  const [floodMode, setFloodMode] = useState<FloodMode>('timeline')
+  const [frameIndex, setFrameIndex] = useState(0)
+  const [playing, setPlaying] = useState(false)
   const [threshold, setThreshold] = useState(0.1)
   const [verticalExaggeration, setVerticalExaggeration] = useState(1)
   const [waterDepthExaggeration, setWaterDepthExaggeration] = useState(6)
@@ -69,6 +73,13 @@ export function App() {
       .then(([scenario, urbanContext]) => {
         setData(scenario)
         setContext(urbanContext)
+        setFrameIndex(Math.min(
+          Math.round(
+            scenario.metadata.scenario.rainfall_duration_minutes * 60
+              / scenario.metadata.timeline.intervalSeconds,
+          ),
+          scenario.metadata.timeline.frameCount - 1,
+        ))
       })
       .catch((reason: unknown) => {
         setError(reason instanceof Error ? reason.message : String(reason))
@@ -79,6 +90,18 @@ export function App() {
     () => (data ? memberFor(data, view) : undefined),
     [data, view],
   )
+
+  useEffect(() => {
+    if (!data || !playing || floodMode !== 'timeline' || view === 'agreement') return
+    const timer = window.setInterval(() => {
+      setFrameIndex((current) => (current + 1) % data.metadata.timeline.frameCount)
+    }, 600)
+    return () => window.clearInterval(timer)
+  }, [data, floodMode, playing, view])
+
+  useEffect(() => {
+    if (view === 'agreement') setPlaying(false)
+  }, [view])
 
   if (error) {
     return (
@@ -100,12 +123,29 @@ export function App() {
 
   const agreement = data.metadata.agreement.metrics
   const selectedMetrics = selectedMember!.metrics
+  const timelineActive = floodMode === 'timeline' && view !== 'agreement'
+  const displayDepth = timelineActive
+    ? timelineDepthForView(data, view as Exclude<ViewId, 'agreement'>, frameIndex)
+    : view === 'city' ? data.medianDepth : selectedMember!.depth
+  const elapsedSeconds = frameIndex * data.metadata.timeline.intervalSeconds
+  const rainDurationSeconds = data.metadata.scenario.rainfall_duration_minutes * 60
+  const phase = elapsedSeconds <= rainDurationSeconds ? 'Rainfall' : 'Recession'
+  const elapsedLabel = `${Math.floor(elapsedSeconds / 3600)}:${String((elapsedSeconds % 3600) / 60).padStart(2, '0')}`
   const cellAreaKm2 = data.metadata.grid.cellSizeMetres ** 2 / 1_000_000
   let medianWetCells = 0
-  for (let index = 0; index < data.medianDepth.length; index += 1) {
-    if (data.active[index] && data.medianDepth[index] >= 0.1) medianWetCells += 1
+  let currentMaximum = 0
+  for (let index = 0; index < displayDepth.length; index += 1) {
+    if (data.active[index] && displayDepth[index] >= 0.1) medianWetCells += 1
+    if (data.active[index]) currentMaximum = Math.max(currentMaximum, displayDepth[index])
   }
-  const stats = view === 'city'
+  const stats = timelineActive
+    ? [
+        ['Elapsed', elapsedLabel],
+        ['Storm phase', phase],
+        ['Area over 10 cm', `${number(medianWetCells * cellAreaKm2)} km²`],
+        ['Current maximum', `${number(currentMaximum)} m`],
+      ]
+    : view === 'city'
     ? [
         ['Building footprints', context.metadata.buildings.count.toLocaleString('en-PK')],
         ['Mapped segments', context.metadata.network.count.toLocaleString('en-PK')],
@@ -187,6 +227,42 @@ export function App() {
           <p className="helper-copy">Precomputed forcing only. Display controls never rescale the model physics.</p>
         </section>
 
+        <section className="panel-section timeline-section">
+          <div className="section-heading compact">
+            <div>
+              <p className="eyebrow">Flood evolution</p>
+              <h2>{timelineActive ? `${phase} · ${elapsedLabel}` : 'Peak envelope'}</h2>
+            </div>
+            {timelineActive && <span className="status-chip">10 min steps</span>}
+          </div>
+          <div className="mode-switch" role="group" aria-label="Flood time mode">
+            <button className={floodMode === 'timeline' ? 'active' : ''} onClick={() => setFloodMode('timeline')}>Timeline</button>
+            <button className={floodMode === 'maximum' ? 'active' : ''} onClick={() => { setFloodMode('maximum'); setPlaying(false) }}>Peak envelope</button>
+          </div>
+          <div className={timelineActive ? 'timeline-controls' : 'timeline-controls disabled'}>
+            <button
+              className="play-button"
+              disabled={!timelineActive}
+              onClick={() => setPlaying((current) => !current)}
+              aria-label={playing ? 'Pause flood timeline' : 'Play flood timeline'}
+            >
+              {playing ? 'Pause' : 'Play'}
+            </button>
+            <input
+              aria-label="Flood timeline"
+              type="range"
+              min="0"
+              max={data.metadata.timeline.frameCount - 1}
+              step="1"
+              value={frameIndex}
+              disabled={!timelineActive}
+              onChange={(event) => { setFrameIndex(Number(event.target.value)); setPlaying(false) }}
+            />
+            <output>{elapsedLabel}</output>
+          </div>
+          {view === 'agreement' && <p className="helper-copy">Agreement is a peak-depth analysis; choose a city or terrain view for playback.</p>}
+        </section>
+
         <section className="panel-section">
           <div className="section-heading compact">
             <div>
@@ -254,7 +330,7 @@ export function App() {
           </label>
           <div className="layer-controls">
             <Toggle checked={showBasemap} label="OSM basemap" helper="Live, browser-cached tiles" onChange={setShowBasemap} />
-            <Toggle checked={showWater} label="Flood depth" helper="Modelled maximum" onChange={setShowWater} />
+            <Toggle checked={showWater} label="Flood depth" helper={timelineActive ? `Instantaneous · ${elapsedLabel}` : 'Modelled peak envelope'} onChange={setShowWater} />
             <Toggle checked={showBuildings} label="Buildings" helper="Footprints; proxy heights" onChange={setShowBuildings} />
             <Toggle checked={showNetwork} label="Street network" helper="Roads, rail and water" onChange={setShowNetwork} />
             <Toggle checked={showLabels} label="Place labels" helper="Districts and landmarks" onChange={setShowLabels} />
@@ -271,6 +347,7 @@ export function App() {
       <section className="viewport">
         <TerrainScene
           data={data}
+          displayDepth={displayDepth}
           context={context}
           view={view}
           dimension={dimension}
@@ -287,8 +364,8 @@ export function App() {
         <div className="viewport-title">
           <p className="eyebrow">
             {view === 'city'
-              ? `Urban context · ensemble median · ${Math.round(threshold * 100)} cm threshold${dimension === '3d' ? ` · flood height ${waterDepthExaggeration}× visual` : ''}`
-              : `Maximum inundation · ${view === 'agreement' ? '10 cm agreement threshold' : `${Math.round(threshold * 100)} cm display threshold`}`}
+              ? `Urban context · ensemble median ${timelineActive ? `at ${elapsedLabel}` : 'peak envelope'} · ${Math.round(threshold * 100)} cm threshold${dimension === '3d' ? ` · flood height ${waterDepthExaggeration}× visual` : ''}`
+              : `${timelineActive ? `Instantaneous inundation at ${elapsedLabel}` : 'Maximum inundation'} · ${view === 'agreement' ? '10 cm agreement threshold' : `${Math.round(threshold * 100)} cm display threshold`}`}
           </p>
           <h1>{viewLabel(data, view)}</h1>
         </div>
@@ -312,7 +389,7 @@ export function App() {
             </>
           ) : (
             <>
-              <p>{view === 'city' ? 'Ensemble median maximum depth' : 'Maximum depth'}</p>
+              <p>{timelineActive ? `Instantaneous depth · ${phase.toLowerCase()}` : view === 'city' ? 'Ensemble median peak depth' : 'Peak depth envelope'}</p>
               <div className="depth-ramp" />
               <div className="ramp-labels"><span>shallow</span><span>deep</span></div>
             </>

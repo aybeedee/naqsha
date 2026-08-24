@@ -11,6 +11,8 @@ import numpy as np
 import rasterio
 from rasterio.warp import transform_bounds
 
+from naqsha.hydraulic_results import read_active_binary_records, read_ascii_grid
+
 
 def write_float32(path: Path, values: np.ndarray) -> None:
     path.write_bytes(np.asarray(values, dtype="<f4").tobytes(order="C"))
@@ -18,6 +20,10 @@ def write_float32(path: Path, values: np.ndarray) -> None:
 
 def write_uint8(path: Path, values: np.ndarray) -> None:
     path.write_bytes(np.asarray(values, dtype="uint8").tobytes(order="C"))
+
+
+def write_uint16(path: Path, values: np.ndarray) -> None:
+    path.write_bytes(np.asarray(values, dtype="<u2").tobytes(order="C"))
 
 
 def _read_raster(path: Path) -> tuple[np.ndarray, dict]:
@@ -50,6 +56,8 @@ def export_web_scenario(model_root: Path, result_root: Path, output_dir: Path) -
     grid_metadata: dict | None = None
     common_active: np.ndarray | None = None
     member_payload = []
+    timeline_frame_count: int | None = None
+    timeline_scale_metres = 0.001
     for name in names:
         model_metadata = json.loads((model_root / name / "model-metadata.json").read_text())
         terrain, terrain_grid = _read_raster(Path(model_metadata["terrain_path"]))
@@ -64,8 +72,27 @@ def export_web_scenario(model_root: Path, result_root: Path, output_dir: Path) -
         common_active = active if common_active is None else common_active & active
         terrain_file = f"terrain-{name}.f32"
         depth_file = f"depth-{name}.f32"
+        timeline_file = f"timeline-depth-{name}.u16"
         write_float32(output_dir / terrain_file, np.where(active, terrain, 0))
         write_float32(output_dir / depth_file, np.where(active, depth, 0))
+        sfincs_mask = read_ascii_grid(
+            model_root / name / "sfincs.msk", terrain.shape
+        ).astype("uint8")
+        surface_south = read_active_binary_records(
+            model_root / name / "zs.dat", np.flipud(sfincs_mask), dtype="<f8"
+        )
+        bed_south = np.loadtxt(model_root / name / "sfincs.dep", dtype="float32")
+        timeline_depth = np.flip(surface_south - bed_south, axis=1)
+        timeline_depth = np.maximum(np.where(active, timeline_depth, 0), 0)
+        frame_count = timeline_depth.shape[0]
+        if timeline_frame_count is None:
+            timeline_frame_count = frame_count
+        elif frame_count != timeline_frame_count:
+            raise ValueError(f"Timeline frame count differs for {name}")
+        quantized = np.rint(timeline_depth / timeline_scale_metres)
+        if np.max(quantized) > np.iinfo("uint16").max:
+            raise ValueError(f"Timeline depth exceeds uint16 range for {name}")
+        write_uint16(output_dir / timeline_file, quantized)
         member_payload.append(
             {
                 "id": name,
@@ -76,12 +103,14 @@ def export_web_scenario(model_root: Path, result_root: Path, output_dir: Path) -
                 }.get(name, name.title()),
                 "terrainFile": terrain_file,
                 "depthFile": depth_file,
+                "timelineFile": timeline_file,
                 "metrics": metrics["members"][name],
                 "terrainMinimumMetres": float(np.min(terrain[active])),
                 "terrainMaximumMetres": float(np.max(terrain[active])),
             }
         )
     assert grid_metadata is not None and common_active is not None
+    assert timeline_frame_count is not None
 
     wet_count, wet_grid = _read_raster(result_root / "wet-member-count.tif")
     if wet_grid != grid_metadata:
@@ -96,7 +125,7 @@ def export_web_scenario(model_root: Path, result_root: Path, output_dir: Path) -
 
     minx, miny, maxx, maxy = grid_metadata["bounds"]
     scenario_payload = {
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "id": output_dir.name,
         "label": "100 mm / 2 h stress test",
         "status": "experimental_non_authoritative",
@@ -112,6 +141,14 @@ def export_web_scenario(model_root: Path, result_root: Path, output_dir: Path) -
             "activeFile": active_file,
         },
         "scenario": manifest["scenario"],
+        "timeline": {
+            "frameCount": timeline_frame_count,
+            "intervalSeconds": manifest["scenario"]["output_interval_seconds"],
+            "durationSeconds": manifest["scenario"]["rainfall_duration_minutes"] * 60
+            + manifest["scenario"]["recession_minutes"] * 60,
+            "depthScaleMetres": timeline_scale_metres,
+            "quantity": "instantaneous_water_depth",
+        },
         "members": member_payload,
         "agreement": {
             "file": agreement_file,

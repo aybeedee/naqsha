@@ -4,6 +4,7 @@ import type {
   ScenarioMetadata,
   UrbanContextData,
   UrbanContextMetadata,
+  ViewId,
 } from './types'
 
 const SCENARIO_ROOT = '/scenarios/rain100mm-2h-loss5'
@@ -27,6 +28,7 @@ export async function loadScenario(): Promise<ScenarioData> {
     ...metadata.members.flatMap((member) => [
       fetchBuffer(`${SCENARIO_ROOT}/${member.terrainFile}`),
       fetchBuffer(`${SCENARIO_ROOT}/${member.depthFile}`),
+      fetchBuffer(`${SCENARIO_ROOT}/${member.timelineFile}`),
     ]),
   ])
 
@@ -37,12 +39,14 @@ export async function loadScenario(): Promise<ScenarioData> {
   }
 
   const members: MemberGrid[] = metadata.members.map((member, index) => {
-    const terrain = new Float32Array(memberBuffers[index * 2])
-    const depth = new Float32Array(memberBuffers[index * 2 + 1])
-    if (terrain.length !== cellCount || depth.length !== cellCount) {
+    const terrain = new Float32Array(memberBuffers[index * 3])
+    const depth = new Float32Array(memberBuffers[index * 3 + 1])
+    const timelineDepth = new Uint16Array(memberBuffers[index * 3 + 2])
+    if (terrain.length !== cellCount || depth.length !== cellCount
+      || timelineDepth.length !== cellCount * metadata.timeline.frameCount) {
       throw new Error(`Grid dimensions do not match metadata for ${member.id}`)
     }
-    return { ...member, terrain, depth }
+    return { ...member, terrain, depth, timelineDepth }
   })
   const maximumDepth = new Float32Array(cellCount)
   const medianDepth = new Float32Array(cellCount)
@@ -54,6 +58,34 @@ export async function loadScenario(): Promise<ScenarioData> {
       - Math.max(...values)
   }
   return { metadata, active, agreement, members, maximumDepth, medianDepth }
+}
+
+export function timelineDepthForView(
+  data: ScenarioData,
+  view: Exclude<ViewId, 'agreement'>,
+  frameIndex: number,
+): Float32Array {
+  const { frameCount, depthScaleMetres } = data.metadata.timeline
+  if (!Number.isInteger(frameIndex) || frameIndex < 0 || frameIndex >= frameCount) {
+    throw new RangeError(`Timeline frame ${frameIndex} is outside 0-${frameCount - 1}`)
+  }
+  const cellCount = data.metadata.grid.width * data.metadata.grid.height
+  const offset = frameIndex * cellCount
+  const result = new Float32Array(cellCount)
+  if (view !== 'city') {
+    const member = data.members.find((candidate) => candidate.id === view)
+    if (!member) throw new Error(`No timeline data for ${view}`)
+    for (let index = 0; index < cellCount; index += 1) {
+      result[index] = member.timelineDepth[offset + index] * depthScaleMetres
+    }
+    return result
+  }
+  for (let index = 0; index < cellCount; index += 1) {
+    const values = data.members.map((member) => member.timelineDepth[offset + index])
+    result[index] = (values[0] + values[1] + values[2]
+      - Math.min(...values) - Math.max(...values)) * depthScaleMetres
+  }
+  return result
 }
 
 export async function loadUrbanContext(): Promise<UrbanContextData> {
