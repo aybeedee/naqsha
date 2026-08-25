@@ -18,6 +18,29 @@ const sourceColours = [
   new THREE.Color('#adb0a2'),
 ]
 
+const roadImpactColours = {
+  shallow: new THREE.Color('#e2d263'),
+  moderate: new THREE.Color('#f19a4b'),
+  severe: new THREE.Color('#ed5d55'),
+  uncertain: new THREE.Color('#9b7565'),
+}
+
+export function roadImpactColour(
+  depthMillimetres: number,
+  wetMemberCount: number,
+  memberCount: number,
+  fallback: THREE.Color,
+): THREE.Color {
+  if (depthMillimetres === 65535 || depthMillimetres < 50) return fallback
+  const risk = depthMillimetres >= 300
+    ? roadImpactColours.severe
+    : depthMillimetres >= 100 ? roadImpactColours.moderate : roadImpactColours.shallow
+  if (depthMillimetres >= 100 && wetMemberCount < memberCount) {
+    return risk.clone().lerp(roadImpactColours.uncertain, 0.42)
+  }
+  return risk
+}
+
 function terrainY(x: number, z: number, options: UrbanGeometryOptions): number {
   if (options.flat) return 0
   const column = Math.round(x / options.grid.cellSizeMetres + (options.grid.width - 1) / 2)
@@ -97,7 +120,12 @@ export function buildBuildingGeometry(options: UrbanGeometryOptions): THREE.Buff
   return finish(vertices, colours)
 }
 
-export function buildNetworkGeometry(options: UrbanGeometryOptions): THREE.BufferGeometry {
+export function buildNetworkGeometry(
+  options: UrbanGeometryOptions,
+  impactDepth?: Uint16Array,
+  impactAgreement?: Uint8Array,
+  memberCount = 3,
+): THREE.BufferGeometry {
   const { context } = options
   const vertices: number[] = []
   const colours: number[] = []
@@ -106,7 +134,9 @@ export function buildNetworkGeometry(options: UrbanGeometryOptions): THREE.Buffe
     const length = context.networkIndex[line * 3 + 1]
     const classId = context.networkIndex[line * 3 + 2]
     const style = context.metadata.network.classes[classId]
-    const colour = new THREE.Color(style.colour)
+    const colour = impactDepth && impactAgreement
+      ? roadImpactColour(impactDepth[line], impactAgreement[line], memberCount, new THREE.Color(style.colour))
+      : new THREE.Color(style.colour)
     const halfWidth = style.widthMetres / 2
     for (let point = 0; point < length - 1; point += 1) {
       const first = (offset + point) * 2

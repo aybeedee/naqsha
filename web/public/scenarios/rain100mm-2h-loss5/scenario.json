@@ -123,5 +123,35 @@
     "solverImage": "deltares/sfincs-cpu:sfincs-v2.4.0-Galibier-Release",
     "sourceModelDirectory": "artifacts/hydraulic-ensemble/rain100mm-2h-loss5",
     "sourceResultDirectory": "artifacts/hydraulic-results/rain100mm-2h-loss5"
+  },
+  "roadImpact": {
+    "timelineDepthFile": "road-impact-depth.u16",
+    "timelineAgreementFile": "road-impact-agreement.u8",
+    "peakDepthFile": "road-impact-peak-depth.u16",
+    "peakAgreementFile": "road-impact-peak-agreement.u8",
+    "lengthFile": "road-impact-length.f32",
+    "contextId": "central-lahore",
+    "lineCount": 3914,
+    "frameCount": 25,
+    "depthScaleMetres": 0.001,
+    "nodataDepth": 65535,
+    "nodataAgreement": 255,
+    "agreementThresholdMetres": 0.1,
+    "memberCount": 3,
+    "roadClassIds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "peakSummary": {
+      "roadLengthOver10cmKm": 183.44517517089844,
+      "roadLengthOver30cmKm": 84.46466827392578,
+      "mappedRoadLengthKm": 431.18927001953125
+    },
+    "warning": "Screening exposure sampled from a terrain-uncertain 28.66 m grid. It is not a road closure or safe-routing determination."
   }
 }

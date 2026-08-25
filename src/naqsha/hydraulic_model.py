@@ -7,7 +7,9 @@ import json
 import math
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime, timedelta
+from itertools import pairwise
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import rasterio
@@ -23,6 +25,9 @@ class HydraulicScenario:
     effective_loss_rate_mm_per_hour: float
     manning_roughness: float = 0.06
     output_interval_seconds: int = 600
+    rainfall_rate_series_mm_per_hour: tuple[tuple[int, float], ...] | None = None
+    start_time_utc: str = "2025-01-01T00:00:00Z"
+    forcing_metadata: dict[str, Any] | None = None
 
     @property
     def rainfall_rate_mm_per_hour(self) -> float:
@@ -47,8 +52,10 @@ class ModelGrid:
 
 
 def validate_scenario(scenario: HydraulicScenario) -> None:
-    if scenario.rainfall_total_mm <= 0:
-        raise ValueError("rainfall_total_mm must be positive")
+    if scenario.rainfall_total_mm < 0:
+        raise ValueError("rainfall_total_mm cannot be negative")
+    if scenario.rainfall_total_mm == 0 and scenario.rainfall_rate_series_mm_per_hour is None:
+        raise ValueError("synthetic rainfall_total_mm must be positive")
     if scenario.rainfall_duration_minutes <= 0 or scenario.recession_minutes < 0:
         raise ValueError("rainfall duration must be positive and recession cannot be negative")
     if scenario.effective_loss_rate_mm_per_hour < 0:
@@ -57,6 +64,19 @@ def validate_scenario(scenario: HydraulicScenario) -> None:
         raise ValueError("output interval must be within the simulation duration")
     if not 0 < scenario.manning_roughness <= 0.1:
         raise ValueError("Manning roughness must be in (0, 0.1]")
+    if scenario.rainfall_rate_series_mm_per_hour is not None:
+        series = scenario.rainfall_rate_series_mm_per_hour
+        if not series or series[0][0] != 0:
+            raise ValueError("forecast rainfall series must begin at zero seconds")
+        if any(
+            seconds < 0 or rate < 0 or not math.isfinite(rate)
+            for seconds, rate in series
+        ):
+            raise ValueError("forecast rainfall series must be finite and non-negative")
+        if any(first[0] >= second[0] for first, second in pairwise(series)):
+            raise ValueError("forecast rainfall series times must strictly increase")
+        if series[-1][0] > scenario.rainfall_duration_minutes * 60:
+            raise ValueError("forecast rainfall series exceeds rainfall duration")
 
 
 def outflow_mask(valid: np.ndarray) -> np.ndarray:
@@ -84,6 +104,8 @@ def write_ascii_grid(path: Path, values: np.ndarray, integer: bool = False) -> N
 
 
 def precipitation_series(scenario: HydraulicScenario) -> list[tuple[int, float]]:
+    if scenario.rainfall_rate_series_mm_per_hour is not None:
+        return list(scenario.rainfall_rate_series_mm_per_hour)
     duration_seconds = scenario.rainfall_duration_minutes * 60
     stop_seconds = scenario.simulation_seconds
     rate = scenario.rainfall_rate_mm_per_hour
@@ -100,7 +122,10 @@ def _write_precipitation(path: Path, scenario: HydraulicScenario) -> None:
 
 
 def _write_sfincs_input(path: Path, grid: ModelGrid, scenario: HydraulicScenario) -> None:
-    start = datetime(2025, 1, 1, tzinfo=UTC)
+    start = datetime.fromisoformat(scenario.start_time_utc)
+    if start.tzinfo is None:
+        raise ValueError("start_time_utc must include a timezone")
+    start = start.astimezone(UTC)
     stop = start + timedelta(seconds=scenario.simulation_seconds)
     parameters = [
         ("mmax", grid.width),
@@ -118,8 +143,8 @@ def _write_sfincs_input(path: Path, grid: ModelGrid, scenario: HydraulicScenario
         ("precipfile", "sfincs.prcp"),
         ("hmaxfile", "sfincs.hmax"),
         ("zsfile", "zs.dat"),
-        ("tref", "20250101 000000"),
-        ("tstart", "20250101 000000"),
+        ("tref", start.strftime("%Y%m%d %H%M%S")),
+        ("tstart", start.strftime("%Y%m%d %H%M%S")),
         ("tstop", stop.strftime("%Y%m%d %H%M%S")),
         ("dtout", scenario.output_interval_seconds),
         ("dtmaxout", scenario.simulation_seconds),
@@ -257,12 +282,58 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--effective-loss-rate", type=float, default=5)
     parser.add_argument("--manning", type=float, default=0.06)
     parser.add_argument("--output-interval-seconds", type=int, default=600)
+    parser.add_argument("--forecast", type=Path, help="Archived forecast forcing JSON")
+    parser.add_argument("--forecast-profile", default="p50", choices=("p10", "p50", "p90"))
     return parser.parse_args()
+
+
+def _forecast_scenario(args: argparse.Namespace) -> HydraulicScenario:
+    forcing = json.loads(args.forecast.read_text())
+    try:
+        profile = next(
+            candidate for candidate in forcing["profiles"] if candidate["id"] == args.forecast_profile
+        )
+    except (KeyError, StopIteration) as error:
+        raise ValueError(f"Forecast profile {args.forecast_profile} is unavailable") from error
+    hourly = [float(value) for value in profile["hourly_mm"]]
+    metadata_keys = (
+        "provider",
+        "product",
+        "model",
+        "requestedLocation",
+        "modelGridLocation",
+        "retrievedAtUtc",
+        "validFromUtc",
+        "validThroughUtc",
+        "memberCount",
+        "allMemberTotalsMm",
+        "warning",
+    )
+    return HydraulicScenario(
+        rainfall_total_mm=sum(hourly),
+        rainfall_duration_minutes=len(hourly) * 60,
+        recession_minutes=args.recession_minutes,
+        effective_loss_rate_mm_per_hour=args.effective_loss_rate,
+        manning_roughness=args.manning,
+        output_interval_seconds=args.output_interval_seconds,
+        rainfall_rate_series_mm_per_hour=tuple(
+            (int(seconds), float(rate))
+            for seconds, rate in profile["rate_series_mm_per_hour"]
+        ),
+        start_time_utc=forcing["validFromUtc"],
+        forcing_metadata={
+            **{key: forcing.get(key) for key in metadata_keys},
+            "profile": {
+                key: profile[key]
+                for key in ("id", "quantile", "source_member", "total_mm")
+            },
+        },
+    )
 
 
 def main() -> None:
     args = parse_args()
-    scenario = HydraulicScenario(
+    scenario = _forecast_scenario(args) if args.forecast else HydraulicScenario(
         rainfall_total_mm=args.rainfall_total_mm,
         rainfall_duration_minutes=args.rainfall_duration_minutes,
         recession_minutes=args.recession_minutes,

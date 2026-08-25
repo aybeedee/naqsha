@@ -65,6 +65,7 @@ export function App() {
   const [showBasemap, setShowBasemap] = useState(true)
   const [showBuildings, setShowBuildings] = useState(true)
   const [showNetwork, setShowNetwork] = useState(true)
+  const [showRoadImpacts, setShowRoadImpacts] = useState(true)
   const [showLabels, setShowLabels] = useState(true)
   const [resetNonce, setResetNonce] = useState(0)
 
@@ -132,18 +133,42 @@ export function App() {
   const phase = elapsedSeconds <= rainDurationSeconds ? 'Rainfall' : 'Recession'
   const elapsedLabel = `${Math.floor(elapsedSeconds / 3600)}:${String((elapsedSeconds % 3600) / 60).padStart(2, '0')}`
   const cellAreaKm2 = data.metadata.grid.cellSizeMetres ** 2 / 1_000_000
+  const roadImpact = data.roadImpact
+  const roadOffset = frameIndex * (roadImpact?.lineCount ?? 0)
+  const roadImpactDepth = roadImpact
+    ? timelineActive
+      ? roadImpact.timelineDepth.subarray(roadOffset, roadOffset + roadImpact.lineCount)
+      : roadImpact.peakDepth
+    : undefined
+  const roadImpactAgreement = roadImpact
+    ? timelineActive
+      ? roadImpact.timelineAgreement.subarray(roadOffset, roadOffset + roadImpact.lineCount)
+      : roadImpact.peakAgreement
+    : undefined
+  let roadLengthOver10cmKm = 0
+  let roadLengthOver30cmKm = 0
+  let sharedRoadLengthKm = 0
+  if (roadImpact && roadImpactDepth && roadImpactAgreement) {
+    for (let line = 0; line < roadImpact.lineCount; line += 1) {
+      const depthMetres = roadImpactDepth[line] * roadImpact.depthScaleMetres
+      if (roadImpactDepth[line] === roadImpact.nodataDepth) continue
+      if (depthMetres >= 0.1) roadLengthOver10cmKm += roadImpact.lengths[line] / 1000
+      if (depthMetres >= 0.3) roadLengthOver30cmKm += roadImpact.lengths[line] / 1000
+      if (depthMetres >= 0.1 && roadImpactAgreement[line] === roadImpact.memberCount) {
+        sharedRoadLengthKm += roadImpact.lengths[line] / 1000
+      }
+    }
+  }
   let medianWetCells = 0
-  let currentMaximum = 0
   for (let index = 0; index < displayDepth.length; index += 1) {
     if (data.active[index] && displayDepth[index] >= 0.1) medianWetCells += 1
-    if (data.active[index]) currentMaximum = Math.max(currentMaximum, displayDepth[index])
   }
   const stats = timelineActive
     ? [
         ['Elapsed', elapsedLabel],
-        ['Storm phase', phase],
-        ['Area over 10 cm', `${number(medianWetCells * cellAreaKm2)} km²`],
-        ['Current maximum', `${number(currentMaximum)} m`],
+        ['Flood area >10 cm', `${number(medianWetCells * cellAreaKm2)} km²`],
+        ['Roads >10 cm', `${number(roadLengthOver10cmKm, 1)} km`],
+        ['Roads >30 cm', `${number(roadLengthOver30cmKm, 1)} km`],
       ]
     : view === 'city'
     ? [
@@ -333,6 +358,7 @@ export function App() {
             <Toggle checked={showWater} label="Flood depth" helper={timelineActive ? `Instantaneous · ${elapsedLabel}` : 'Modelled peak envelope'} onChange={setShowWater} />
             <Toggle checked={showBuildings} label="Buildings" helper="Footprints; proxy heights" onChange={setShowBuildings} />
             <Toggle checked={showNetwork} label="Street network" helper="Roads, rail and water" onChange={setShowNetwork} />
+            <Toggle checked={showRoadImpacts} label="Road impacts" helper="Depth + terrain agreement" onChange={setShowRoadImpacts} />
             <Toggle checked={showLabels} label="Place labels" helper="Districts and landmarks" onChange={setShowLabels} />
           </div>
         </section>
@@ -358,6 +384,9 @@ export function App() {
           showBasemap={showBasemap}
           showBuildings={showBuildings}
           showNetwork={showNetwork}
+          showRoadImpacts={showRoadImpacts}
+          roadImpactDepth={roadImpactDepth}
+          roadImpactAgreement={roadImpactAgreement}
           showLabels={showLabels}
           resetNonce={resetNonce}
         />
@@ -395,6 +424,17 @@ export function App() {
             </>
           )}
         </div>
+        {view === 'city' && showRoadImpacts && roadImpact && (
+          <div className="road-impact-card">
+            <p>Road exposure · screening only</p>
+            <div className="road-risk-ramp">
+              <span><i className="road-shallow" />5–10 cm</span>
+              <span><i className="road-moderate" />10–30 cm</span>
+              <span><i className="road-severe" />30+ cm</span>
+            </div>
+            <small>{number(sharedRoadLengthKm, 1)} km over 10 cm in all terrain members</small>
+          </div>
+        )}
         <div className="navigation-hint">
           {dimension === '2d' ? 'Drag to pan · Scroll to zoom · North is up' : 'Drag to orbit · Scroll to zoom · Right-drag to pan'}
         </div>

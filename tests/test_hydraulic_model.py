@@ -6,6 +6,7 @@ from naqsha.hydraulic_model import (
     HydraulicScenario,
     outflow_mask,
     precipitation_series,
+    validate_scenario,
     write_ascii_grid,
 )
 
@@ -31,3 +32,31 @@ def test_ascii_grid_starts_at_southern_row(tmp_path: Path):
     output = tmp_path / "grid.asc"
     write_ascii_grid(output, values, integer=True)
     assert output.read_text().splitlines() == ["3 4", "1 2"]
+
+
+def test_forecast_rate_series_replaces_synthetic_block():
+    series = ((0, 2.0), (3599, 2.0), (3600, 0.0))
+    scenario = HydraulicScenario(
+        2,
+        60,
+        120,
+        5,
+        rainfall_rate_series_mm_per_hour=series,
+        start_time_utc="2026-08-26T00:00:00Z",
+    )
+    validate_scenario(scenario)
+    assert precipitation_series(scenario) == list(series)
+
+
+def test_zero_rain_is_only_valid_for_an_explicit_forecast():
+    with np.testing.assert_raises(ValueError):
+        validate_scenario(HydraulicScenario(0, 60, 120, 5))
+    validate_scenario(
+        HydraulicScenario(
+            0,
+            60,
+            120,
+            5,
+            rainfall_rate_series_mm_per_hour=((0, 0), (3600, 0)),
+        )
+    )

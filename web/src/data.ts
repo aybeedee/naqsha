@@ -57,7 +57,32 @@ export async function loadScenario(): Promise<ScenarioData> {
       - Math.min(...values)
       - Math.max(...values)
   }
-  return { metadata, active, agreement, members, maximumDepth, medianDepth }
+  let roadImpact
+  if (metadata.roadImpact) {
+    const impact = metadata.roadImpact
+    const [timelineDepth, timelineAgreement, peakDepth, peakAgreement, lengths] = await Promise.all([
+      fetchBuffer(`${SCENARIO_ROOT}/${impact.timelineDepthFile}`).then((value) => new Uint16Array(value)),
+      fetchBuffer(`${SCENARIO_ROOT}/${impact.timelineAgreementFile}`).then((value) => new Uint8Array(value)),
+      fetchBuffer(`${SCENARIO_ROOT}/${impact.peakDepthFile}`).then((value) => new Uint16Array(value)),
+      fetchBuffer(`${SCENARIO_ROOT}/${impact.peakAgreementFile}`).then((value) => new Uint8Array(value)),
+      fetchBuffer(`${SCENARIO_ROOT}/${impact.lengthFile}`).then((value) => new Float32Array(value)),
+    ])
+    if (timelineDepth.length !== impact.frameCount * impact.lineCount
+      || timelineAgreement.length !== impact.frameCount * impact.lineCount
+      || peakDepth.length !== impact.lineCount || peakAgreement.length !== impact.lineCount
+      || lengths.length !== impact.lineCount) {
+      throw new Error('Road-impact dimensions do not match metadata')
+    }
+    roadImpact = {
+      ...impact,
+      timelineDepth,
+      timelineAgreement,
+      peakDepth,
+      peakAgreement,
+      lengths,
+    }
+  }
+  return { metadata, active, agreement, members, maximumDepth, medianDepth, roadImpact }
 }
 
 export function timelineDepthForView(

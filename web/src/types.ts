@@ -77,11 +77,43 @@ export interface ScenarioMetadata {
     thresholdMetres: number
     metrics: AgreementMetrics
   }
+  roadImpact?: RoadImpactMetadata
   provenance: {
     solverImage: string
     sourceModelDirectory: string
     sourceResultDirectory: string
   }
+}
+
+export interface RoadImpactMetadata {
+  timelineDepthFile: string
+  timelineAgreementFile: string
+  peakDepthFile: string
+  peakAgreementFile: string
+  lengthFile: string
+  contextId: string
+  lineCount: number
+  frameCount: number
+  depthScaleMetres: number
+  nodataDepth: number
+  nodataAgreement: number
+  agreementThresholdMetres: number
+  memberCount: number
+  roadClassIds: number[]
+  peakSummary: {
+    roadLengthOver10cmKm: number
+    roadLengthOver30cmKm: number
+    mappedRoadLengthKm: number
+  }
+  warning: string
+}
+
+export interface RoadImpactData extends RoadImpactMetadata {
+  timelineDepth: Uint16Array
+  timelineAgreement: Uint8Array
+  peakDepth: Uint16Array
+  peakAgreement: Uint8Array
+  lengths: Float32Array
 }
 
 export interface MemberGrid extends MemberMetadata {
@@ -97,6 +129,7 @@ export interface ScenarioData {
   members: MemberGrid[]
   maximumDepth: Float32Array
   medianDepth: Float32Array
+  roadImpact?: RoadImpactData
 }
 
 export interface LineClass {

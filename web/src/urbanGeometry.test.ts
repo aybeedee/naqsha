@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
+import * as THREE from 'three'
 import type { UrbanContextData } from './types'
-import { buildBuildingGeometry, buildNetworkGeometry } from './urbanGeometry'
+import { buildBuildingGeometry, buildNetworkGeometry, roadImpactColour } from './urbanGeometry'
 
 const context = {
   metadata: {
@@ -49,5 +50,13 @@ describe('urban geometry', () => {
   it('turns a mapped line into a visible ribbon', () => {
     const geometry = buildNetworkGeometry(options)
     expect(geometry.getAttribute('position').count).toBe(6)
+  })
+
+  it('styles severe shared road impact more strongly than an uncertain impact', () => {
+    const fallback = new THREE.Color('#ffffff')
+    const shared = roadImpactColour(400, 3, 3, fallback)
+    const uncertain = roadImpactColour(400, 1, 3, fallback)
+    expect(shared.getHexString()).not.toBe(uncertain.getHexString())
+    expect(roadImpactColour(20, 0, 3, fallback).getHexString()).toBe('ffffff')
   })
 })

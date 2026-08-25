@@ -1,6 +1,6 @@
 COMPOSE := $(shell docker compose version >/dev/null 2>&1 && echo "docker compose" || echo "docker-compose")
 
-.PHONY: build audit compare ensemble central-ensemble elevation-control hydraulic-build hydraulic-run hydraulic-results urban-context-install urban-context-download urban-context-export-local web-export web-export-local web-install web-dev web-test web-build test audit-local compare-local ensemble-local central-ensemble-local elevation-control-local hydraulic-build-local hydraulic-results-local test-local lint-local
+.PHONY: build audit compare ensemble central-ensemble elevation-control forecast-central-local hydraulic-build hydraulic-run hydraulic-results road-impact-local urban-context-install urban-context-download urban-context-export-local web-export web-export-local web-install web-dev web-test web-build test audit-local compare-local ensemble-local central-ensemble-local elevation-control-local hydraulic-build-local hydraulic-results-local test-local lint-local
 
 HYDRAULIC_MODELS := artifacts/hydraulic-ensemble/rain100mm-2h-loss5
 HYDRAULIC_RESULTS := artifacts/hydraulic-results/rain100mm-2h-loss5
@@ -8,6 +8,7 @@ SFINCS_IMAGE := deltares/sfincs-cpu:sfincs-v2.4.0-Galibier-Release
 WEB_SCENARIO := web/public/scenarios/rain100mm-2h-loss5
 URBAN_RAW := data/raw/urban-context
 URBAN_CONTEXT := web/public/context/central-lahore
+FORECAST_ARCHIVE := artifacts/forecasts/central-lahore-latest.json
 
 build:
 	$(COMPOSE) build terrain-audit
@@ -26,6 +27,9 @@ central-ensemble:
 
 elevation-control:
 	$(COMPOSE) run --rm terrain-audit python -m naqsha.elevation_control --aoi data/aoi/central-lahore-candidate.geojson --input data/raw/icesat2/ATL08_2025-08-28_RGT1133.csv --output artifacts/central-lahore-elevation-control --download --surface copernicus=artifacts/central-lahore-terrain-ensemble/copernicus/terrain-utm43n.tif --surface fabdem=artifacts/central-lahore-terrain-ensemble/fabdem/terrain-utm43n.tif --surface srtm=artifacts/central-lahore-terrain-ensemble/srtm/terrain-utm43n.tif
+
+forecast-central-local:
+	.venv/bin/python -m naqsha.forecast --latitude 31.555 --longitude 74.325 --forecast-hours 72 --output $(FORECAST_ARCHIVE)
 
 hydraulic-build:
 	$(COMPOSE) run --rm terrain-audit python -m naqsha.hydraulic_model --output $(HYDRAULIC_MODELS) --surface copernicus=artifacts/central-lahore-terrain-ensemble/copernicus/terrain-utm43n.tif --surface fabdem=artifacts/central-lahore-terrain-ensemble/fabdem/terrain-utm43n.tif --surface srtm=artifacts/central-lahore-terrain-ensemble/srtm/terrain-utm43n.tif
@@ -48,6 +52,9 @@ urban-context-download:
 
 urban-context-export-local:
 	.venv/bin/python -m naqsha.urban_context --buildings $(URBAN_RAW)/buildings.geojson --osm $(URBAN_RAW)/osm-context.json --scenario $(WEB_SCENARIO)/scenario.json --output $(URBAN_CONTEXT)
+
+road-impact-local:
+	.venv/bin/python -m naqsha.road_impact --scenario $(WEB_SCENARIO) --context $(URBAN_CONTEXT)
 
 web-export:
 	$(COMPOSE) run --rm terrain-audit python -m naqsha.web_export --models $(HYDRAULIC_MODELS) --results $(HYDRAULIC_RESULTS) --output $(WEB_SCENARIO)

@@ -19,6 +19,9 @@ interface TerrainSceneProps {
   showBasemap: boolean
   showBuildings: boolean
   showNetwork: boolean
+  showRoadImpacts: boolean
+  roadImpactDepth?: Uint16Array
+  roadImpactAgreement?: Uint8Array
   showLabels: boolean
   resetNonce: number
 }
@@ -114,6 +117,9 @@ export function TerrainScene({
   showBasemap,
   showBuildings,
   showNetwork,
+  showRoadImpacts,
+  roadImpactDepth,
+  roadImpactAgreement,
   showLabels,
   resetNonce,
 }: TerrainSceneProps) {
@@ -351,7 +357,13 @@ export function TerrainScene({
       state.contextModel.add(new THREE.Mesh(geometry, material))
     }
     if (showNetwork) {
-      const geometry = buildNetworkGeometry(urbanOptions)
+      const useImpact = showRoadImpacts && view === 'city'
+      const geometry = buildNetworkGeometry(
+        urbanOptions,
+        useImpact ? roadImpactDepth : undefined,
+        useImpact ? roadImpactAgreement : undefined,
+        data.roadImpact?.memberCount,
+      )
       const material = new THREE.MeshStandardMaterial({
         vertexColors: true,
         roughness: 0.9,
@@ -376,7 +388,20 @@ export function TerrainScene({
         state.contextModel.add(sprite)
       }
     }
-  }, [context, data, dimension, renderExaggeration, selected, showBuildings, showLabels, showNetwork])
+  }, [
+    context,
+    data,
+    dimension,
+    renderExaggeration,
+    roadImpactAgreement,
+    roadImpactDepth,
+    selected,
+    showBuildings,
+    showLabels,
+    showNetwork,
+    showRoadImpacts,
+    view,
+  ])
 
   useEffect(() => {
     if (sceneRef.current) resetCamera(sceneRef.current, data, dimension)
