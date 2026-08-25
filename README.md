@@ -89,7 +89,7 @@ make web-install
 make web-dev
 ```
 
-Open `http://localhost:5173`. The checked-in scenario assets are enough to use
+Open `http://localhost:5174`. The checked-in scenario assets are enough to use
 the viewer without rerunning SFINCS. Select either district in the top bar, or
 open `?area=gulberg-liberty` directly. To regenerate them from local hydraulic
 artifacts, run `make web-export-local`. A containerized production build is

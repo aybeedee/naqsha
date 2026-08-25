@@ -22,4 +22,4 @@ services:
       context: web
       dockerfile: Dockerfile
     ports:
-      - "5173:80"
+      - "5174:80"

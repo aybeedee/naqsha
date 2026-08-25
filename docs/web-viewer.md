@@ -107,6 +107,6 @@ For the containerized build:
 docker compose up --build viewer
 ```
 
-Then open `http://localhost:5173`. The static image serves the same precomputed
+Then open `http://localhost:5174`. The static image serves the same precomputed
 assets through nginx; no Naqsha backend is required. Only the optional OSM
 basemap uses an external runtime service.
