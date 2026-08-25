@@ -180,7 +180,8 @@ def export_road_impacts(
             "mappedRoadLengthKm": float(np.sum(lengths[valid_peak]) / 1000),
         },
         "warning": (
-            "Screening exposure sampled from a terrain-uncertain 28.66 m grid. It is not a road "
+            "Screening exposure sampled from a terrain-uncertain "
+            f"{float(scenario['grid']['cellSizeMetres']):.2f} m grid. It is not a road "
             "closure or safe-routing determination."
         ),
     }

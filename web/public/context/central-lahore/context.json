@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "crs": "EPSG:32643",
   "origin": {
     "easting": 435930.7552658547,
@@ -25,6 +25,7 @@
     "count": 3914,
     "coordinateFile": "network.xy.f32",
     "indexFile": "network.index.u32",
+    "nameFile": "network.names.json",
     "classes": [
       {
         "id": 0,
@@ -414,7 +415,7 @@
   ],
   "provenance": {
     "overtureRelease": "2026-08-19.0",
-    "osmTimestamp": "2026-08-23T20:24:49Z",
+    "osmTimestamp": "2026-08-25T19:18:03Z",
     "buildingThemeLicense": "ODbL-1.0",
     "buildingSources": [
       "OpenStreetMap contributors",

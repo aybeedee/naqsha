@@ -3,8 +3,9 @@
 ## Purpose
 
 The viewer is a communication and model-diagnostics slice, not a public flood
-warning product. It displays one precomputed synthetic storm over the central
-Lahore candidate. Its default **City** view combines a conditioned FABDEM ground
+warning product. Its area catalog currently switches between central Lahore
+and Gulberg–Liberty; direct links can use `?area=<area-id>`. Each area displays
+the same precomputed synthetic storm. Its default **City** view combines a conditioned FABDEM ground
 surface, a time-varying ensemble-median depth display, public building footprints,
 the OSM street/infrastructure network, and recognizable place labels. A separate
 peak-envelope mode retains the maximum-depth diagnostic.
@@ -33,6 +34,9 @@ teal in all three. A cell shown in one member is not a verified flooded place.
 - Scenario forcing is shown read-only, with the experimental warning and
   evidence resolution always visible.
 - Buildings, network, labels, and flood depth can be hidden independently.
+- Road exposure colours and totals are computed for every hydraulic frame.
+  Named-road rankings aggregate OSM segments, while district summaries sample
+  a 250 m vicinity around map labels; neither is a safe-routing decision.
 - The optional OSM Carto basemap loads only the displayed AOI at one zoom.
   Browser HTTP caching is respected; failure falls back to local vector data.
 - Three-dimensional flood areas have raised surfaces and darker perimeter
@@ -44,7 +48,8 @@ building heights are an 8 m rendering proxy. Buildings are not yet hydraulic
 obstacles. The current slice intentionally has no parcel lookup, live forecast,
 known drainage network, surveyed kerbs, or authoritative imagery. Those
 additions should follow terrain and drainage calibration rather than making the
-experimental surface look more precise.
+experimental surface look more precise. Forecast metadata is displayed when a
+scenario was generated from an archived ensemble forcing.
 
 ## Browser data contract
 
@@ -58,6 +63,8 @@ endian row-major grid files:
 | `timeline-depth-<member>.u16` | uint16 millimetres | 25 instantaneous depth frames |
 | `active.u8` | uint8 boolean | Cells shared by all terrain realizations |
 | `wet-member-count.u8` | uint8 0–3; 255 nodata | Members exceeding 10 cm |
+| `road-impact-depth.u16` | uint16 millimetres | Median sampled road depth by frame |
+| `road-impact-agreement.u8` | uint8 0–3; 255 nodata | Terrain members exceeding 10 cm on each road |
 
 The manifest carries grid dimensions, CRS, affine transform, bounds, scenario
 forcing, timeline cadence and scale, member metrics, warning text, and solver
@@ -65,7 +72,7 @@ provenance. The checked-in hydraulic scenario is about 3.6 MB, so a tile service
 is unnecessary at this scale.
 
 The parallel urban-context contract contains binary footprint rings, per-
-building height/source arrays, network polylines with class/width metadata, and
+building height/source arrays, network polylines with class/width/name metadata, and
 decluttered labels. It is about 1.2 MB. Its acquisition, interpretation limits,
 and ODbL obligations are documented in [the urban-context decision](urban-context.md).
 

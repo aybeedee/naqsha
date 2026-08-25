@@ -3,6 +3,22 @@ export type ViewId = MemberId | 'agreement' | 'city'
 export type Dimension = '2d' | '3d'
 export type FloodMode = 'timeline' | 'maximum'
 
+export interface AreaCatalogEntry {
+  id: string
+  label: string
+  location: string
+  description: string
+  scenarioRoot: string
+  contextRoot: string
+  role: 'validation-benchmark' | 'expansion-area'
+}
+
+export interface AreaCatalog {
+  schemaVersion: number
+  defaultArea: string
+  areas: AreaCatalogEntry[]
+}
+
 export interface MemberMetrics {
   analysed_cell_count: number
   flooded_area_over_5cm_km2: number
@@ -63,6 +79,22 @@ export interface ScenarioMetadata {
     effective_loss_rate_mm_per_hour: number
     manning_roughness: number
     output_interval_seconds: number
+    start_time_utc?: string
+    forcing_metadata?: {
+      provider?: string
+      model?: string
+      retrievedAtUtc?: string
+      validFromUtc?: string
+      validThroughUtc?: string
+      memberCount?: number
+      warning?: string
+      profile?: {
+        id: string
+        quantile: number
+        source_member: string
+        total_mm: number
+      }
+    } | null
   }
   timeline: {
     frameCount: number
@@ -167,6 +199,7 @@ export interface UrbanContextMetadata {
     count: number
     coordinateFile: string
     indexFile: string
+    nameFile?: string
     classes: LineClass[]
   }
   labels: UrbanLabel[]
@@ -190,4 +223,5 @@ export interface UrbanContextData {
   buildingSource: Uint8Array
   networkCoordinates: Float32Array
   networkIndex: Uint32Array
+  networkNames?: string[]
 }

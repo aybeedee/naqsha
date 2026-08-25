@@ -231,6 +231,7 @@ def export_urban_context(
     osm = json.loads(osm_path.read_text())
     line_coordinates: list[float] = []
     line_index: list[int] = []
+    line_names: list[str] = []
     label_candidates: list[dict[str, Any]] = []
     named_roads: set[str] = set()
     for element in osm.get("elements", []):
@@ -259,6 +260,7 @@ def export_urban_context(
         coordinates = [(point["lon"], point["lat"]) for point in element["geometry"]]
         projected = transform(projector.transform, LineString(coordinates)).intersection(clip)
         pieces = _lines(projected)
+        name = tags.get("name:en") or tags.get("name") or ""
         for line in pieces:
             line = line.simplify(0.8)
             if line.length < 3:
@@ -269,7 +271,7 @@ def export_urban_context(
                 local_x, local_z = _local_xy(x, y, origin)
                 line_coordinates.extend((local_x, local_z))
             line_index.extend((offset, len(points), class_id))
-        name = tags.get("name:en") or tags.get("name")
+            line_names.append(str(name))
         if name and class_id <= 3 and name.casefold() not in named_roads and pieces:
             midpoint = max(pieces, key=lambda part: part.length).interpolate(0.5, normalized=True)
             local_x, local_z = _local_xy(midpoint.x, midpoint.y, origin)
@@ -292,10 +294,13 @@ def export_urban_context(
     write_uint8(output_dir / "buildings.source.u8", np.asarray(source_ids))
     write_float32(output_dir / "network.xy.f32", np.asarray(line_coordinates))
     write_uint32(output_dir / "network.index.u32", np.asarray(line_index))
+    (output_dir / "network.names.json").write_text(
+        json.dumps(line_names, ensure_ascii=False) + "\n"
+    )
 
     measured_count = sum(measured_height)
     payload = {
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "crs": scenario["grid"]["crs"],
         "origin": {"easting": origin[0], "northing": origin[1]},
         "buildings": {
@@ -314,6 +319,7 @@ def export_urban_context(
             "count": len(line_index) // 3,
             "coordinateFile": "network.xy.f32",
             "indexFile": "network.index.u32",
+            "nameFile": "network.names.json",
             "classes": LINE_CLASSES,
         },
         "labels": _declutter_labels(label_candidates),

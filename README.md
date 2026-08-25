@@ -23,14 +23,20 @@ The terrain audit:
    terrain-agreement rasters;
 8. packages those grids into compact browser assets and presents them in an
    uncertainty-first Three.js viewer;
-9. adds a frozen public-data city layer with 19,329 building footprints, 3,914
-   mapped road/rail/water segments, and recognizable Lahore labels;
+9. adds frozen public-data city layers for central Lahore and Gulberg–Liberty,
+   together containing 43,661 building footprints and 6,363 mapped
+   road/rail/water/park segments;
 10. optionally drapes live OSM cartography over the terrain and renders either
     instantaneous or peak flood depth as an explicitly display-exaggerated 3D
-    volume.
+    volume;
+11. intersects every hydraulic frame with the mapped road network, colours
+    exposed segments, and ranks named roads and neighbourhood-label vicinities;
+12. archives 51-member weather-model rainfall forecasts as reproducible
+    p10/p50/p90 forcing trajectories accepted directly by SFINCS.
 
-The included boundary is a **provisional technical test area** around the
-Gulberg–Liberty corridor. It is not yet the final hydraulic pilot.
+The app includes two deliberately different areas: central Lahore is the
+evidence-led validation benchmark; Gulberg–Liberty is a provisional expansion
+area. Neither has passed the accuracy gate for authoritative depths.
 
 ## Run
 
@@ -84,7 +90,8 @@ make web-dev
 ```
 
 Open `http://localhost:5173`. The checked-in scenario assets are enough to use
-the viewer without rerunning SFINCS. To regenerate them from local hydraulic
+the viewer without rerunning SFINCS. Select either district in the top bar, or
+open `?area=gulberg-liberty` directly. To regenerate them from local hydraulic
 artifacts, run `make web-export-local`. A containerized production build is
 available with `docker compose up --build viewer` (or `docker-compose` on an
 older Compose installation). See the [viewer design and data contract](docs/web-viewer.md)
@@ -94,6 +101,25 @@ The checked-in city extract is sufficient to run the app. To reproduce it from
 the public Overture and OpenStreetMap sources, follow the
 [urban-context decision](docs/urban-context.md) or run the three
 `make urban-context-*` targets documented there.
+
+## Forecast-to-flood workflow
+
+The forecast path is operational but intentionally does not treat one weather
+model as certainty. It archives actual ensemble-member trajectories nearest
+the whole-event p10, p50, and p90 rainfall totals:
+
+```bash
+make forecast-central-local
+make forecast-hydraulic-build-local FORECAST_PROFILE=p90
+make forecast-hydraulic-run FORECAST_PROFILE=p90
+make forecast-hydraulic-results-local FORECAST_PROFILE=p90
+```
+
+The archive records provider, model, grid point, retrieval time, valid period,
+member count, and every hourly forcing value. The current command uses the
+ECMWF IFS ensemble through Open-Meteo over a 72-hour horizon. This global model
+does not resolve neighbourhood convection, so results remain scenario bands,
+not a deterministic warning. See [forecast and road impacts](docs/forecast-and-road-impacts.md).
 
 Run the automated tests with:
 

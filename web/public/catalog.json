@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "defaultArea": "central-lahore",
+  "areas": [
+    {
+      "id": "central-lahore",
+      "label": "Central Lahore",
+      "location": "Lakshmi Chowk · GPO · Lawrence Road",
+      "description": "Evidence-led validation benchmark with documented historic flood hotspots.",
+      "scenarioRoot": "/scenarios/rain100mm-2h-loss5",
+      "contextRoot": "/context/central-lahore",
+      "role": "validation-benchmark"
+    },
+    {
+      "id": "gulberg-liberty",
+      "label": "Gulberg–Liberty",
+      "location": "Gulberg · Liberty · Cavalry Ground",
+      "description": "Commercial and residential expansion area for cross-district testing.",
+      "scenarioRoot": "/scenarios/gulberg-rain100mm-2h-loss5",
+      "contextRoot": "/context/gulberg-liberty",
+      "role": "expansion-area"
+    }
+  ]
+}

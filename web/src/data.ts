@@ -1,4 +1,5 @@
 import type {
+  AreaCatalog,
   MemberGrid,
   ScenarioData,
   ScenarioMetadata,
@@ -7,28 +8,35 @@ import type {
   ViewId,
 } from './types'
 
-const SCENARIO_ROOT = '/scenarios/rain100mm-2h-loss5'
-const CONTEXT_ROOT = '/context/central-lahore'
-
 async function fetchBuffer(path: string): Promise<ArrayBuffer> {
   const response = await fetch(path)
   if (!response.ok) throw new Error(`Could not load ${path}: ${response.status}`)
   return response.arrayBuffer()
 }
 
-export async function loadScenario(): Promise<ScenarioData> {
-  const response = await fetch(`${SCENARIO_ROOT}/scenario.json`)
+export async function loadCatalog(): Promise<AreaCatalog> {
+  const response = await fetch('/catalog.json')
+  if (!response.ok) throw new Error(`Could not load study-area catalog: ${response.status}`)
+  const catalog = (await response.json()) as AreaCatalog
+  if (!catalog.areas.length || !catalog.areas.some((area) => area.id === catalog.defaultArea)) {
+    throw new Error('Study-area catalog has no valid default area')
+  }
+  return catalog
+}
+
+export async function loadScenario(scenarioRoot: string): Promise<ScenarioData> {
+  const response = await fetch(`${scenarioRoot}/scenario.json`)
   if (!response.ok) throw new Error(`Could not load scenario metadata: ${response.status}`)
   const metadata = (await response.json()) as ScenarioMetadata
   const cellCount = metadata.grid.width * metadata.grid.height
 
   const [activeBuffer, agreementBuffer, ...memberBuffers] = await Promise.all([
-    fetchBuffer(`${SCENARIO_ROOT}/${metadata.grid.activeFile}`),
-    fetchBuffer(`${SCENARIO_ROOT}/${metadata.agreement.file}`),
+    fetchBuffer(`${scenarioRoot}/${metadata.grid.activeFile}`),
+    fetchBuffer(`${scenarioRoot}/${metadata.agreement.file}`),
     ...metadata.members.flatMap((member) => [
-      fetchBuffer(`${SCENARIO_ROOT}/${member.terrainFile}`),
-      fetchBuffer(`${SCENARIO_ROOT}/${member.depthFile}`),
-      fetchBuffer(`${SCENARIO_ROOT}/${member.timelineFile}`),
+      fetchBuffer(`${scenarioRoot}/${member.terrainFile}`),
+      fetchBuffer(`${scenarioRoot}/${member.depthFile}`),
+      fetchBuffer(`${scenarioRoot}/${member.timelineFile}`),
     ]),
   ])
 
@@ -61,11 +69,11 @@ export async function loadScenario(): Promise<ScenarioData> {
   if (metadata.roadImpact) {
     const impact = metadata.roadImpact
     const [timelineDepth, timelineAgreement, peakDepth, peakAgreement, lengths] = await Promise.all([
-      fetchBuffer(`${SCENARIO_ROOT}/${impact.timelineDepthFile}`).then((value) => new Uint16Array(value)),
-      fetchBuffer(`${SCENARIO_ROOT}/${impact.timelineAgreementFile}`).then((value) => new Uint8Array(value)),
-      fetchBuffer(`${SCENARIO_ROOT}/${impact.peakDepthFile}`).then((value) => new Uint16Array(value)),
-      fetchBuffer(`${SCENARIO_ROOT}/${impact.peakAgreementFile}`).then((value) => new Uint8Array(value)),
-      fetchBuffer(`${SCENARIO_ROOT}/${impact.lengthFile}`).then((value) => new Float32Array(value)),
+      fetchBuffer(`${scenarioRoot}/${impact.timelineDepthFile}`).then((value) => new Uint16Array(value)),
+      fetchBuffer(`${scenarioRoot}/${impact.timelineAgreementFile}`).then((value) => new Uint8Array(value)),
+      fetchBuffer(`${scenarioRoot}/${impact.peakDepthFile}`).then((value) => new Uint16Array(value)),
+      fetchBuffer(`${scenarioRoot}/${impact.peakAgreementFile}`).then((value) => new Uint8Array(value)),
+      fetchBuffer(`${scenarioRoot}/${impact.lengthFile}`).then((value) => new Float32Array(value)),
     ])
     if (timelineDepth.length !== impact.frameCount * impact.lineCount
       || timelineAgreement.length !== impact.frameCount * impact.lineCount
@@ -113,19 +121,19 @@ export function timelineDepthForView(
   return result
 }
 
-export async function loadUrbanContext(): Promise<UrbanContextData> {
-  const response = await fetch(`${CONTEXT_ROOT}/context.json`)
+export async function loadUrbanContext(contextRoot: string): Promise<UrbanContextData> {
+  const response = await fetch(`${contextRoot}/context.json`)
   if (!response.ok) throw new Error(`Could not load urban context metadata: ${response.status}`)
   const metadata = (await response.json()) as UrbanContextMetadata
   const [buildingCoordinates, buildingIndex, buildingHeights, buildingHeightSource,
     buildingSource, networkCoordinates, networkIndex] = await Promise.all([
-    fetchBuffer(`${CONTEXT_ROOT}/${metadata.buildings.coordinateFile}`).then((value) => new Float32Array(value)),
-    fetchBuffer(`${CONTEXT_ROOT}/${metadata.buildings.indexFile}`).then((value) => new Uint32Array(value)),
-    fetchBuffer(`${CONTEXT_ROOT}/${metadata.buildings.heightFile}`).then((value) => new Float32Array(value)),
-    fetchBuffer(`${CONTEXT_ROOT}/${metadata.buildings.heightSourceFile}`).then((value) => new Uint8Array(value)),
-    fetchBuffer(`${CONTEXT_ROOT}/${metadata.buildings.sourceFile}`).then((value) => new Uint8Array(value)),
-    fetchBuffer(`${CONTEXT_ROOT}/${metadata.network.coordinateFile}`).then((value) => new Float32Array(value)),
-    fetchBuffer(`${CONTEXT_ROOT}/${metadata.network.indexFile}`).then((value) => new Uint32Array(value)),
+    fetchBuffer(`${contextRoot}/${metadata.buildings.coordinateFile}`).then((value) => new Float32Array(value)),
+    fetchBuffer(`${contextRoot}/${metadata.buildings.indexFile}`).then((value) => new Uint32Array(value)),
+    fetchBuffer(`${contextRoot}/${metadata.buildings.heightFile}`).then((value) => new Float32Array(value)),
+    fetchBuffer(`${contextRoot}/${metadata.buildings.heightSourceFile}`).then((value) => new Uint8Array(value)),
+    fetchBuffer(`${contextRoot}/${metadata.buildings.sourceFile}`).then((value) => new Uint8Array(value)),
+    fetchBuffer(`${contextRoot}/${metadata.network.coordinateFile}`).then((value) => new Float32Array(value)),
+    fetchBuffer(`${contextRoot}/${metadata.network.indexFile}`).then((value) => new Uint32Array(value)),
   ])
   if (buildingIndex.length !== metadata.buildings.count * 2
     || buildingHeights.length !== metadata.buildings.count
@@ -136,6 +144,15 @@ export async function loadUrbanContext(): Promise<UrbanContextData> {
   if (networkIndex.length !== metadata.network.count * 3) {
     throw new Error('Network asset dimensions do not match context metadata')
   }
+  let networkNames: string[] | undefined
+  if (metadata.network.nameFile) {
+    const namesResponse = await fetch(`${contextRoot}/${metadata.network.nameFile}`)
+    if (!namesResponse.ok) throw new Error(`Could not load network names: ${namesResponse.status}`)
+    networkNames = (await namesResponse.json()) as string[]
+    if (networkNames.length !== metadata.network.count) {
+      throw new Error('Network name count does not match context metadata')
+    }
+  }
   return {
     metadata,
     buildingCoordinates,
@@ -145,5 +162,6 @@ export async function loadUrbanContext(): Promise<UrbanContextData> {
     buildingSource,
     networkCoordinates,
     networkIndex,
+    networkNames,
   }
 }

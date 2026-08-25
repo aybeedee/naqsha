@@ -47,7 +47,13 @@ def _read_raster(path: Path) -> tuple[np.ndarray, dict]:
     return values, metadata
 
 
-def export_web_scenario(model_root: Path, result_root: Path, output_dir: Path) -> dict:
+def export_web_scenario(
+    model_root: Path,
+    result_root: Path,
+    output_dir: Path,
+    label: str = "100 mm / 2 h stress test",
+    location: str = "Central Lahore — Lakshmi Chowk / GPO / Lawrence Road candidate",
+) -> dict:
     manifest = json.loads((model_root / "ensemble-manifest.json").read_text())
     metrics = json.loads((result_root / "metrics.json").read_text())
     names = manifest["terrain_members"]
@@ -127,13 +133,13 @@ def export_web_scenario(model_root: Path, result_root: Path, output_dir: Path) -
     scenario_payload = {
         "schemaVersion": 2,
         "id": output_dir.name,
-        "label": "100 mm / 2 h stress test",
+        "label": label,
         "status": "experimental_non_authoritative",
         "warning": (
             "Terrain-source disagreement dominates this experiment. Do not interpret mapped cells "
             "as authoritative street or property flood depths."
         ),
-        "location": "Central Lahore — Lakshmi Chowk / GPO / Lawrence Road candidate",
+        "location": location,
         "grid": {
             **grid_metadata,
             "extentWidthMetres": maxx - minx,
@@ -172,12 +178,19 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--models", type=Path, required=True)
     parser.add_argument("--results", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--label", default="100 mm / 2 h stress test")
+    parser.add_argument(
+        "--location",
+        default="Central Lahore — Lakshmi Chowk / GPO / Lawrence Road candidate",
+    )
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
-    payload = export_web_scenario(args.models, args.results, args.output)
+    payload = export_web_scenario(
+        args.models, args.results, args.output, label=args.label, location=args.location
+    )
     json.dump(payload, sys.stdout, indent=2)
     print()
 

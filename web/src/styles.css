@@ -48,7 +48,9 @@ button { color: inherit; }
 .brand-mark::after { width: 1px; height: 22px; right: 10px; top: 4px; }
 .brand-mark span { width: 22px; height: 1px; left: 4px; top: 15px; }
 .location-lockup { gap: 10px; padding-left: 20px; }
-.location-lockup strong { display: block; margin-top: 3px; font-size: 13px; font-weight: 550; }
+.location-lockup select { display: block; margin: 1px 0 0; padding: 0 18px 0 0; border: 0; background: transparent; color: var(--ink); font-size: 13px; font-weight: 650; cursor: pointer; }
+.location-lockup option { background: #0b2028; color: var(--ink); }
+.location-lockup span:not(.live-dot) { display: block; max-width: 330px; margin-top: 1px; overflow: hidden; color: #6f898b; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
 .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--teal); box-shadow: 0 0 0 5px rgba(67, 213, 197, .09); }
 .topbar-actions { display: flex; align-items: center; gap: 10px; }
 .dimension-switch { display: flex; padding: 2px; border: 1px solid var(--line); border-radius: 4px; background: #091a21; }
@@ -151,6 +153,19 @@ button { color: inherit; }
 .road-moderate { background: #f19a4b; }
 .road-severe { background: #ed5d55; }
 .road-impact-card small { display: block; margin-top: 9px; padding-top: 8px; border-top: 1px solid var(--line); color: #7f9695; font-size: 8px; line-height: 1.4; }
+.road-ranking-card { position: absolute; z-index: 3; top: 284px; right: 28px; width: 235px; padding: 12px; border: 1px solid rgba(240, 170, 82, .2); background: rgba(7, 22, 29, .88); backdrop-filter: blur(12px); }
+.road-ranking-card > p { margin: 0 0 9px; color: #aebebb; font-size: 8px; letter-spacing: .12em; text-transform: uppercase; }
+.road-ranking-card ol { display: grid; gap: 7px; margin: 0; padding: 0; list-style: none; counter-reset: roads; }
+.road-ranking-card li { display: grid; grid-template-columns: 1fr auto; gap: 10px; min-width: 0; counter-increment: roads; }
+.road-ranking-card li span { overflow: hidden; color: #c8d5d1; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.road-ranking-card li span::before { content: counter(roads) ". "; color: #718b8c; }
+.road-ranking-card li strong { color: #e7b164; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 8px; font-weight: 500; white-space: nowrap; }
+.road-ranking-card small { display: block; margin-top: 9px; padding-top: 8px; border-top: 1px solid var(--line); color: #6f898b; font-size: 8px; line-height: 1.4; }
+.hotspot-ranking { display: grid; gap: 6px; margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--line); }
+.hotspot-ranking > p { margin: 0 0 2px; color: #8ba4a5; font-size: 8px; letter-spacing: .1em; text-transform: uppercase; }
+.hotspot-ranking > div { display: grid; grid-template-columns: 1fr auto; gap: 8px; min-width: 0; }
+.hotspot-ranking span { overflow: hidden; color: #b9cac6; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
+.hotspot-ranking strong { color: #76cfc5; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 8px; font-weight: 500; white-space: nowrap; }
 .navigation-hint { position: absolute; z-index: 3; right: 28px; bottom: 35px; color: #698385; font-size: 9px; letter-spacing: .04em; }
 .map-attribution { position: absolute; z-index: 3; right: 28px; bottom: 10px; color: #587274; font-size: 8px; letter-spacing: .02em; }
 .map-attribution a { color: #6f898b; text-decoration: none; }
@@ -187,5 +202,6 @@ button { color: inherit; }
   .viewport-title { left: 15px; top: 15px; }
   .legend-card { display: none; }
   .road-impact-card { display: none; }
+  .road-ranking-card { display: none; }
   .map-attribution { right: 12px; bottom: 3px; max-width: 85%; text-align: right; }
 }

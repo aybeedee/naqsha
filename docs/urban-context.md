@@ -1,4 +1,4 @@
-# Central Lahore urban context
+# Lahore urban context
 
 ## Decision
 
@@ -6,7 +6,7 @@ Use a frozen, local vector extract instead of a live third-party basemap for
 the first recognizable city view. The 4 × 4 km AOI is small enough to deliver
 the processed context in about 1.2 MB and the viewer remains usable offline.
 
-The extract combines:
+The central extract combines:
 
 - **Overture Buildings** for footprint completeness: 19,329 clipped features;
 - **OpenStreetMap** for 3,914 road, rail, waterway, and park-boundary segments;
@@ -19,6 +19,11 @@ proxy, not a claim about the Lahore skyline. The Overture building theme also
 contains ML-derived roofprints; false positives, omissions, and outdated
 features remain possible.
 
+The Gulberg–Liberty expansion extract adds 24,332 footprints and 2,449 network
+segments. Of those buildings, 622 have a tagged height/floor-derived height and
+23,710 use the same 8 m visual proxy. Both contexts now retain a per-segment OSM
+name array so hydraulic exposure can be aggregated into named-road rankings.
+
 ## Reproduce the extract
 
 Install the optional official Overture downloader, download the raw sources,
@@ -28,6 +33,9 @@ then export the browser assets:
 make urban-context-install
 make urban-context-download
 make urban-context-export-local
+
+make urban-context-gulberg-download
+make urban-context-gulberg-export-local
 ```
 
 Raw source downloads are ignored under `data/raw/urban-context/`. The exporter

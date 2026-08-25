@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
-import { loadScenario, loadUrbanContext, timelineDepthForView } from './data'
+import { loadCatalog, loadScenario, loadUrbanContext, timelineDepthForView } from './data'
 import { TerrainScene } from './TerrainScene'
 import type {
   Dimension,
+  AreaCatalog,
   FloodMode,
   MemberGrid,
   ScenarioData,
@@ -50,6 +51,8 @@ function Toggle({
 }
 
 export function App() {
+  const [catalog, setCatalog] = useState<AreaCatalog | null>(null)
+  const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null)
   const [data, setData] = useState<ScenarioData | null>(null)
   const [context, setContext] = useState<UrbanContextData | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -70,8 +73,39 @@ export function App() {
   const [resetNonce, setResetNonce] = useState(0)
 
   useEffect(() => {
-    Promise.all([loadScenario(), loadUrbanContext()])
+    loadCatalog()
+      .then((nextCatalog) => {
+        setCatalog(nextCatalog)
+        const requestedArea = new URLSearchParams(window.location.search).get('area')
+        setSelectedAreaId(
+          requestedArea && nextCatalog.areas.some((area) => area.id === requestedArea)
+            ? requestedArea
+            : nextCatalog.defaultArea,
+        )
+      })
+      .catch((reason: unknown) => {
+        setError(reason instanceof Error ? reason.message : String(reason))
+      })
+  }, [])
+
+  useEffect(() => {
+    if (!selectedAreaId) return
+    const url = new URL(window.location.href)
+    url.searchParams.set('area', selectedAreaId)
+    window.history.replaceState(null, '', url)
+  }, [selectedAreaId])
+
+  useEffect(() => {
+    const area = catalog?.areas.find((candidate) => candidate.id === selectedAreaId)
+    if (!area) return
+    let cancelled = false
+    setData(null)
+    setContext(null)
+    setError(null)
+    setPlaying(false)
+    Promise.all([loadScenario(area.scenarioRoot), loadUrbanContext(area.contextRoot)])
       .then(([scenario, urbanContext]) => {
+        if (cancelled) return
         setData(scenario)
         setContext(urbanContext)
         setFrameIndex(Math.min(
@@ -83,9 +117,11 @@ export function App() {
         ))
       })
       .catch((reason: unknown) => {
+        if (cancelled) return
         setError(reason instanceof Error ? reason.message : String(reason))
       })
-  }, [])
+    return () => { cancelled = true }
+  }, [catalog, selectedAreaId])
 
   const selectedMember = useMemo(
     () => (data ? memberFor(data, view) : undefined),
@@ -113,7 +149,7 @@ export function App() {
       </main>
     )
   }
-  if (!data || !context) {
+  if (!catalog || !data || !context) {
     return (
       <main className="center-state loading-state">
         <div className="loading-mark" />
@@ -121,6 +157,9 @@ export function App() {
       </main>
     )
   }
+
+  const selectedArea = catalog.areas.find((area) => area.id === selectedAreaId)!
+  const forecastForcing = data.metadata.scenario.forcing_metadata
 
   const agreement = data.metadata.agreement.metrics
   const selectedMetrics = selectedMember!.metrics
@@ -148,6 +187,7 @@ export function App() {
   let roadLengthOver10cmKm = 0
   let roadLengthOver30cmKm = 0
   let sharedRoadLengthKm = 0
+  const namedExposure = new Map<string, { maximumDepth: number; exposedLengthKm: number }>()
   if (roadImpact && roadImpactDepth && roadImpactAgreement) {
     for (let line = 0; line < roadImpact.lineCount; line += 1) {
       const depthMetres = roadImpactDepth[line] * roadImpact.depthScaleMetres
@@ -157,8 +197,53 @@ export function App() {
       if (depthMetres >= 0.1 && roadImpactAgreement[line] === roadImpact.memberCount) {
         sharedRoadLengthKm += roadImpact.lengths[line] / 1000
       }
+      const roadName = context.networkNames?.[line]?.trim()
+      if (roadName && depthMetres >= 0.1) {
+        const current = namedExposure.get(roadName) ?? { maximumDepth: 0, exposedLengthKm: 0 }
+        current.maximumDepth = Math.max(current.maximumDepth, depthMetres)
+        current.exposedLengthKm += roadImpact.lengths[line] / 1000
+        namedExposure.set(roadName, current)
+      }
     }
   }
+  const mostImpactedRoads = [...namedExposure.entries()]
+    .sort((first, second) => second[1].maximumDepth - first[1].maximumDepth
+      || second[1].exposedLengthKm - first[1].exposedLengthKm)
+    .slice(0, 5)
+  const hotspotRadiusCells = Math.ceil(250 / data.metadata.grid.cellSizeMetres)
+  const neighbourhoodHotspots = context.metadata.labels
+    .filter((label) => label.category === 'district')
+    .map((label) => {
+      const centreColumn = Math.round(
+        label.x / data.metadata.grid.cellSizeMetres + (data.metadata.grid.width - 1) / 2,
+      )
+      const centreRow = Math.round(
+        label.z / data.metadata.grid.cellSizeMetres + (data.metadata.grid.height - 1) / 2,
+      )
+      let maximumDepth = 0
+      let activeCells = 0
+      let wetCells = 0
+      for (let row = centreRow - hotspotRadiusCells; row <= centreRow + hotspotRadiusCells; row += 1) {
+        for (let column = centreColumn - hotspotRadiusCells; column <= centreColumn + hotspotRadiusCells; column += 1) {
+          if (row < 0 || column < 0 || row >= data.metadata.grid.height || column >= data.metadata.grid.width) continue
+          if ((row - centreRow) ** 2 + (column - centreColumn) ** 2 > hotspotRadiusCells ** 2) continue
+          const index = row * data.metadata.grid.width + column
+          if (!data.active[index]) continue
+          activeCells += 1
+          maximumDepth = Math.max(maximumDepth, displayDepth[index])
+          if (displayDepth[index] >= 0.1) wetCells += 1
+        }
+      }
+      return {
+        name: label.name,
+        maximumDepth,
+        wetFraction: activeCells ? wetCells / activeCells : 0,
+      }
+    })
+    .filter((hotspot) => hotspot.maximumDepth >= 0.1)
+    .sort((first, second) => second.maximumDepth - first.maximumDepth
+      || second.wetFraction - first.wetFraction)
+    .slice(0, 3)
   let medianWetCells = 0
   for (let index = 0; index < displayDepth.length; index += 1) {
     if (data.active[index] && displayDepth[index] >= 0.1) medianWetCells += 1
@@ -205,7 +290,16 @@ export function App() {
           <span className="live-dot" />
           <div>
             <small>Study area</small>
-            <strong>Central Lahore, Pakistan</strong>
+            <select
+              aria-label="Study area"
+              value={selectedArea.id}
+              onChange={(event) => setSelectedAreaId(event.target.value)}
+            >
+              {catalog.areas.map((area) => (
+                <option key={area.id} value={area.id}>{area.label}</option>
+              ))}
+            </select>
+            <span>{selectedArea.location}</span>
           </div>
         </div>
         <div className="topbar-actions">
@@ -238,10 +332,10 @@ export function App() {
         <section className="panel-section">
           <div className="section-heading">
             <div>
-              <p className="eyebrow">Scenario 01</p>
+              <p className="eyebrow">{forecastForcing ? 'Forecast scenario' : 'Design stress scenario'}</p>
               <h2>{data.metadata.label}</h2>
             </div>
-            <span className="status-chip">Computed</span>
+            <span className="status-chip">{forecastForcing?.profile?.id ?? 'Computed'}</span>
           </div>
           <div className="scenario-grid">
             <div><span>Rain</span><strong>{data.metadata.scenario.rainfall_total_mm} mm</strong></div>
@@ -249,7 +343,14 @@ export function App() {
             <div><span>Loss proxy</span><strong>{data.metadata.scenario.effective_loss_rate_mm_per_hour} mm/h</strong></div>
             <div><span>Recession</span><strong>{data.metadata.scenario.recession_minutes / 60} h</strong></div>
           </div>
-          <p className="helper-copy">Precomputed forcing only. Display controls never rescale the model physics.</p>
+          {forecastForcing ? (
+            <p className="helper-copy">
+              {forecastForcing.provider} {forecastForcing.model} · {forecastForcing.memberCount} members ·{' '}
+              retrieved {forecastForcing.retrievedAtUtc ? new Date(forecastForcing.retrievedAtUtc).toLocaleString('en-PK') : 'time unavailable'}.
+            </p>
+          ) : (
+            <p className="helper-copy">Precomputed design forcing. Display controls never rescale the model physics.</p>
+          )}
         </section>
 
         <section className="panel-section timeline-section">
@@ -364,9 +465,10 @@ export function App() {
         </section>
 
         <section className="provenance">
-          <p>SFINCS 2.4.0 · EPSG:32643 · 28.66 m cells</p>
+          <p>{data.metadata.location}</p>
+          <p>SFINCS 2.4.0 · {data.metadata.grid.crs} · {number(data.metadata.grid.cellSizeMetres, 2)} m cells</p>
           <p>Flood volume height is display-exaggerated in 3D</p>
-          <p>19,302 building heights are an 8 m visual proxy</p>
+          <p>{context.metadata.buildings.inferredHeightCount.toLocaleString('en-PK')} building heights are an 8 m visual proxy</p>
         </section>
       </aside>
 
@@ -433,6 +535,31 @@ export function App() {
               <span><i className="road-severe" />30+ cm</span>
             </div>
             <small>{number(sharedRoadLengthKm, 1)} km over 10 cm in all terrain members</small>
+          </div>
+        )}
+        {view === 'city' && showRoadImpacts && mostImpactedRoads.length > 0 && (
+          <div className="road-ranking-card">
+            <p>Most impacted named roads</p>
+            <ol>
+              {mostImpactedRoads.map(([name, exposure]) => (
+                <li key={name}>
+                  <span>{name}</span>
+                  <strong>{number(exposure.maximumDepth)} m · {number(exposure.exposedLengthKm, 1)} km</strong>
+                </li>
+              ))}
+            </ol>
+            <small>Ranked by sampled maximum depth; not a closure or safe-routing decision.</small>
+            {neighbourhoodHotspots.length > 0 && (
+              <div className="hotspot-ranking">
+                <p>Highest-depth label vicinities</p>
+                {neighbourhoodHotspots.map((hotspot) => (
+                  <div key={hotspot.name}>
+                    <span>{hotspot.name}</span>
+                    <strong>{number(hotspot.maximumDepth)} m · {number(hotspot.wetFraction * 100, 0)}% wet</strong>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
         <div className="navigation-hint">

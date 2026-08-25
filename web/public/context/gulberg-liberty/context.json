@@ -1,0 +1,360 @@
+{
+  "schemaVersion": 2,
+  "crs": "EPSG:32643",
+  "origin": {
+    "easting": 438284.09442222706,
+    "northing": 3486756.9120763
+  },
+  "buildings": {
+    "count": 24332,
+    "coordinateFile": "buildings.xy.f32",
+    "indexFile": "buildings.index.u32",
+    "heightFile": "buildings.height.f32",
+    "heightSourceFile": "buildings.height-source.u8",
+    "sourceFile": "buildings.source.u8",
+    "sourceCounts": {
+      "Google Open Buildings": 17230,
+      "Microsoft ML Buildings": 5800,
+      "OpenStreetMap": 1302
+    },
+    "measuredOrTaggedHeightCount": 622,
+    "inferredHeightCount": 23710,
+    "inferredHeightMetres": 8
+  },
+  "network": {
+    "count": 2449,
+    "coordinateFile": "network.xy.f32",
+    "indexFile": "network.index.u32",
+    "nameFile": "network.names.json",
+    "classes": [
+      {
+        "id": 0,
+        "name": "trunk",
+        "widthMetres": 18,
+        "colour": "#e1ad68"
+      },
+      {
+        "id": 1,
+        "name": "primary",
+        "widthMetres": 14,
+        "colour": "#d7a768"
+      },
+      {
+        "id": 2,
+        "name": "secondary",
+        "widthMetres": 11,
+        "colour": "#c9a270"
+      },
+      {
+        "id": 3,
+        "name": "tertiary",
+        "widthMetres": 8,
+        "colour": "#a99b7c"
+      },
+      {
+        "id": 4,
+        "name": "local",
+        "widthMetres": 5,
+        "colour": "#748889"
+      },
+      {
+        "id": 5,
+        "name": "service",
+        "widthMetres": 3,
+        "colour": "#536d72"
+      },
+      {
+        "id": 6,
+        "name": "pedestrian",
+        "widthMetres": 2,
+        "colour": "#496268"
+      },
+      {
+        "id": 7,
+        "name": "railway",
+        "widthMetres": 5,
+        "colour": "#bd8268"
+      },
+      {
+        "id": 8,
+        "name": "waterway",
+        "widthMetres": 7,
+        "colour": "#398da2"
+      },
+      {
+        "id": 9,
+        "name": "park",
+        "widthMetres": 3,
+        "colour": "#4f8b72"
+      }
+    ]
+  },
+  "labels": [
+    {
+      "name": "Cavalry Ground",
+      "category": "district",
+      "priority": 100,
+      "x": 1689.46,
+      "z": 1420.93
+    },
+    {
+      "name": "Gulberg",
+      "category": "district",
+      "priority": 100,
+      "x": -666.62,
+      "z": 223.82
+    },
+    {
+      "name": "Lahore Cantonment",
+      "category": "station",
+      "priority": 94,
+      "x": 1064.71,
+      "z": -1822.2
+    },
+    {
+      "name": "Abdul Rehman Chughtai Museum",
+      "category": "landmark",
+      "priority": 90,
+      "x": -1862.58,
+      "z": 905.39
+    },
+    {
+      "name": "Askari 2",
+      "category": "district",
+      "priority": 88,
+      "x": 1162.34,
+      "z": -1211.8
+    },
+    {
+      "name": "CBD Walton",
+      "category": "district",
+      "priority": 88,
+      "x": -762.94,
+      "z": 1680.33
+    },
+    {
+      "name": "Gulbahar Colony",
+      "category": "district",
+      "priority": 88,
+      "x": 906.4,
+      "z": 1612.58
+    },
+    {
+      "name": "Jinnah Park",
+      "category": "district",
+      "priority": 88,
+      "x": 871.05,
+      "z": -897.29
+    },
+    {
+      "name": "Kabootarpura",
+      "category": "district",
+      "priority": 88,
+      "x": 547.72,
+      "z": 1059.57
+    },
+    {
+      "name": "Makkah Colony",
+      "category": "district",
+      "priority": 88,
+      "x": 533.29,
+      "z": 1867.35
+    },
+    {
+      "name": "Nabipura",
+      "category": "district",
+      "priority": 88,
+      "x": 860.14,
+      "z": -135.69
+    },
+    {
+      "name": "Rehman Park",
+      "category": "district",
+      "priority": 88,
+      "x": 932.62,
+      "z": -1149.92
+    },
+    {
+      "name": "Saint John Park",
+      "category": "district",
+      "priority": 88,
+      "x": 1481.56,
+      "z": -1541.26
+    },
+    {
+      "name": "Central Institute Of Management & Science",
+      "category": "civic",
+      "priority": 86,
+      "x": -1388.56,
+      "z": 1771.87
+    },
+    {
+      "name": "Concordia College",
+      "category": "civic",
+      "priority": 86,
+      "x": -1516.12,
+      "z": 1670.47
+    },
+    {
+      "name": "Forman Christian College University",
+      "category": "civic",
+      "priority": 86,
+      "x": -1675.72,
+      "z": -936.38
+    },
+    {
+      "name": "Lahore Leads University",
+      "category": "civic",
+      "priority": 86,
+      "x": -2000.53,
+      "z": 1203.67
+    },
+    {
+      "name": "Pakistan College of Law",
+      "category": "civic",
+      "priority": 86,
+      "x": -1776.79,
+      "z": 1246.9
+    },
+    {
+      "name": "Baba Qutab Shah Mazar",
+      "category": "landmark",
+      "priority": 84,
+      "x": -105.68,
+      "z": 1337.0
+    },
+    {
+      "name": "Akram Complex Hospital",
+      "category": "civic",
+      "priority": 78,
+      "x": -592.25,
+      "z": -2153.76
+    },
+    {
+      "name": "Al Mairah Dental and Cosmetics Clinic",
+      "category": "civic",
+      "priority": 78,
+      "x": 1572.53,
+      "z": 1619.09
+    },
+    {
+      "name": "Amanat Eye Hospital",
+      "category": "civic",
+      "priority": 78,
+      "x": -910.32,
+      "z": -478.81
+    },
+    {
+      "name": "Canal Bank Road",
+      "category": "road",
+      "priority": 76,
+      "x": -1904.7,
+      "z": -1055.13
+    },
+    {
+      "name": "East Canal Bank Road",
+      "category": "road",
+      "priority": 76,
+      "x": -1224.0,
+      "z": -1837.23
+    },
+    {
+      "name": "Abid Majeed Road (Featherston Road)",
+      "category": "road",
+      "priority": 69,
+      "x": 1900.92,
+      "z": -908.05
+    },
+    {
+      "name": "Firozpur Road",
+      "category": "road",
+      "priority": 69,
+      "x": -1397.37,
+      "z": 2075.61
+    },
+    {
+      "name": "Jail Road",
+      "category": "road",
+      "priority": 69,
+      "x": 1159.4,
+      "z": -1454.3
+    },
+    {
+      "name": "Kalma Chowk Flyover",
+      "category": "road",
+      "priority": 69,
+      "x": -1777.42,
+      "z": 1056.09
+    },
+    {
+      "name": "Sherpao Bridge",
+      "category": "road",
+      "priority": 69,
+      "x": 992.21,
+      "z": -1643.36
+    },
+    {
+      "name": "Ali Zaib Road",
+      "category": "road",
+      "priority": 62,
+      "x": -1106.87,
+      "z": 890.53
+    },
+    {
+      "name": "Ali Zeb Road",
+      "category": "road",
+      "priority": 62,
+      "x": 1995.73,
+      "z": 1411.44
+    },
+    {
+      "name": "Aziz Bhatti Road",
+      "category": "road",
+      "priority": 62,
+      "x": 1550.3,
+      "z": -1799.25
+    },
+    {
+      "name": "College Road",
+      "category": "road",
+      "priority": 62,
+      "x": 546.85,
+      "z": -1191.95
+    },
+    {
+      "name": "Gurumangat Road",
+      "category": "road",
+      "priority": 62,
+      "x": 699.78,
+      "z": -841.1
+    },
+    {
+      "name": "Infantry Road",
+      "category": "road",
+      "priority": 62,
+      "x": 1814.53,
+      "z": -2056.7
+    },
+    {
+      "name": "Jinnah Bridge",
+      "category": "road",
+      "priority": 62,
+      "x": 813.81,
+      "z": 1344.52
+    }
+  ],
+  "provenance": {
+    "overtureRelease": "2026-08-19.0",
+    "osmTimestamp": "2026-08-25T19:16:03Z",
+    "buildingThemeLicense": "ODbL-1.0",
+    "buildingSources": [
+      "OpenStreetMap contributors",
+      "Google Open Buildings",
+      "Microsoft Global ML Building Footprints",
+      "Overture Maps Foundation"
+    ],
+    "networkSource": "OpenStreetMap contributors",
+    "networkLicense": "ODbL-1.0",
+    "warning": "Building footprints are public map/ML observations. Most extrusion heights are an explicit 8 m visual proxy and are not surveyed building heights."
+  }
+}

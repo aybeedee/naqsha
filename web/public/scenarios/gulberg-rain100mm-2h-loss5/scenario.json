@@ -1,0 +1,160 @@
+{
+  "schemaVersion": 2,
+  "id": "gulberg-rain100mm-2h-loss5",
+  "label": "100 mm / 2 h stress test",
+  "status": "experimental_non_authoritative",
+  "warning": "Terrain-source disagreement dominates this experiment. Do not interpret mapped cells as authoritative street or property flood depths.",
+  "location": "Gulberg\u2013Liberty \u2014 provisional expansion area",
+  "grid": {
+    "width": 142,
+    "height": 164,
+    "crs": "EPSG:32643",
+    "transform": [
+      28.65306297687473,
+      0.0,
+      436249.72695086896,
+      0.0,
+      -28.65306297687473,
+      3489106.4632404037
+    ],
+    "bounds": [
+      436249.72695086896,
+      3484407.3609121963,
+      440318.46189358516,
+      3489106.4632404037
+    ],
+    "geographicBounds": [
+      74.3284481159798,
+      31.4927425601547,
+      74.37159009880314,
+      31.535355160024775
+    ],
+    "cellSizeMetres": 28.65306297687473,
+    "extentWidthMetres": 4068.734942716197,
+    "extentHeightMetres": 4699.102328207344,
+    "activeFile": "active.u8"
+  },
+  "scenario": {
+    "rainfall_total_mm": 100,
+    "rainfall_duration_minutes": 120,
+    "recession_minutes": 120,
+    "effective_loss_rate_mm_per_hour": 5,
+    "manning_roughness": 0.06,
+    "output_interval_seconds": 600,
+    "rainfall_rate_series_mm_per_hour": null,
+    "start_time_utc": "2025-01-01T00:00:00Z",
+    "forcing_metadata": null
+  },
+  "timeline": {
+    "frameCount": 25,
+    "intervalSeconds": 600,
+    "durationSeconds": 14400,
+    "depthScaleMetres": 0.001,
+    "quantity": "instantaneous_water_depth"
+  },
+  "members": [
+    {
+      "id": "copernicus",
+      "label": "Copernicus GLO-30",
+      "terrainFile": "terrain-copernicus.f32",
+      "depthFile": "depth-copernicus.f32",
+      "timelineFile": "timeline-depth-copernicus.u16",
+      "metrics": {
+        "analysed_cell_count": 20782,
+        "flooded_area_over_5cm_km2": 3.77576988458309,
+        "flooded_area_over_10cm_km2": 3.0894155415712476,
+        "flooded_area_over_30cm_km2": 1.7667877346429246,
+        "maximum_depth_m": 2.3932342529296875,
+        "wet_cell_depth_p95_m": 0.8524109125137329,
+        "integrated_maximum_depth_volume_proxy_m3": 1600611.25
+      },
+      "terrainMinimumMetres": 206.3662872314453,
+      "terrainMaximumMetres": 235.9471435546875
+    },
+    {
+      "id": "fabdem",
+      "label": "FABDEM v1.2",
+      "terrainFile": "terrain-fabdem.f32",
+      "depthFile": "depth-fabdem.f32",
+      "timelineFile": "timeline-depth-fabdem.u16",
+      "metrics": {
+        "analysed_cell_count": 20782,
+        "flooded_area_over_5cm_km2": 9.45625517082584,
+        "flooded_area_over_10cm_km2": 5.111533659798721,
+        "flooded_area_over_30cm_km2": 0.6354524658985239,
+        "maximum_depth_m": 0.6964111328125,
+        "wet_cell_depth_p95_m": 0.31943434476852417,
+        "integrated_maximum_depth_volume_proxy_m3": 1552297.5
+      },
+      "terrainMinimumMetres": 211.62600708007812,
+      "terrainMaximumMetres": 221.22064208984375
+    },
+    {
+      "id": "srtm",
+      "label": "SRTM-family",
+      "terrainFile": "terrain-srtm.f32",
+      "depthFile": "depth-srtm.f32",
+      "timelineFile": "timeline-depth-srtm.u16",
+      "metrics": {
+        "analysed_cell_count": 20782,
+        "flooded_area_over_5cm_km2": 2.439185111349502,
+        "flooded_area_over_10cm_km2": 1.9162093739110528,
+        "flooded_area_over_30cm_km2": 1.3669616998979874,
+        "maximum_depth_m": 3.74139404296875,
+        "wet_cell_depth_p95_m": 1.5150222778320312,
+        "integrated_maximum_depth_volume_proxy_m3": 1598638.125
+      },
+      "terrainMinimumMetres": 193.2899627685547,
+      "terrainMaximumMetres": 252.68544006347656
+    }
+  ],
+  "agreement": {
+    "file": "wet-member-count.u8",
+    "thresholdMetres": 0.1,
+    "metrics": {
+      "member_count": 3,
+      "analysed_cell_count": 20782,
+      "union_flooded_area_over_10cm_km2": 8.15497331236439,
+      "intersection_flooded_area_over_10cm_km2": 0.14531664917834464,
+      "all_member_wet_jaccard": 0.017819389912413167,
+      "terrain_sensitive_wet_fraction": 0.9821806100875868,
+      "depth_range_p50_in_union_m": 0.234130859375,
+      "depth_range_p95_in_union_m": 1.0075470209121704
+    }
+  },
+  "provenance": {
+    "solverImage": "deltares/sfincs-cpu:sfincs-v2.4.0-Galibier-Release",
+    "sourceModelDirectory": "artifacts/hydraulic-ensemble/gulberg-rain100mm-2h-loss5",
+    "sourceResultDirectory": "artifacts/hydraulic-results/gulberg-rain100mm-2h-loss5"
+  },
+  "roadImpact": {
+    "timelineDepthFile": "road-impact-depth.u16",
+    "timelineAgreementFile": "road-impact-agreement.u8",
+    "peakDepthFile": "road-impact-peak-depth.u16",
+    "peakAgreementFile": "road-impact-peak-agreement.u8",
+    "lengthFile": "road-impact-length.f32",
+    "contextId": "gulberg-liberty",
+    "lineCount": 2449,
+    "frameCount": 25,
+    "depthScaleMetres": 0.001,
+    "nodataDepth": 65535,
+    "nodataAgreement": 255,
+    "agreementThresholdMetres": 0.1,
+    "memberCount": 3,
+    "roadClassIds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "peakSummary": {
+      "roadLengthOver10cmKm": 216.68252563476562,
+      "roadLengthOver30cmKm": 106.52881622314453,
+      "mappedRoadLengthKm": 411.3155212402344
+    },
+    "warning": "Screening exposure sampled from a terrain-uncertain 28.65 m grid. It is not a road closure or safe-routing determination."
+  }
+}

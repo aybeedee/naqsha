@@ -1,6 +1,6 @@
 COMPOSE := $(shell docker compose version >/dev/null 2>&1 && echo "docker compose" || echo "docker-compose")
 
-.PHONY: build audit compare ensemble central-ensemble elevation-control forecast-central-local hydraulic-build hydraulic-run hydraulic-results road-impact-local urban-context-install urban-context-download urban-context-export-local web-export web-export-local web-install web-dev web-test web-build test audit-local compare-local ensemble-local central-ensemble-local elevation-control-local hydraulic-build-local hydraulic-results-local test-local lint-local
+.PHONY: build audit compare ensemble central-ensemble elevation-control forecast-central-local forecast-hydraulic-build-local forecast-hydraulic-run forecast-hydraulic-results-local hydraulic-build hydraulic-run hydraulic-results hydraulic-gulberg-build-local hydraulic-gulberg-run hydraulic-gulberg-results-local road-impact-local road-impact-gulberg-local urban-context-install urban-context-download urban-context-gulberg-download urban-context-export-local urban-context-gulberg-export-local web-export web-export-local web-export-gulberg-local web-install web-dev web-test web-build test audit-local compare-local ensemble-local central-ensemble-local elevation-control-local hydraulic-build-local hydraulic-results-local test-local lint-local
 
 HYDRAULIC_MODELS := artifacts/hydraulic-ensemble/rain100mm-2h-loss5
 HYDRAULIC_RESULTS := artifacts/hydraulic-results/rain100mm-2h-loss5
@@ -9,6 +9,14 @@ WEB_SCENARIO := web/public/scenarios/rain100mm-2h-loss5
 URBAN_RAW := data/raw/urban-context
 URBAN_CONTEXT := web/public/context/central-lahore
 FORECAST_ARCHIVE := artifacts/forecasts/central-lahore-latest.json
+FORECAST_PROFILE ?= p90
+FORECAST_HYDRAULIC_MODELS := artifacts/hydraulic-forecast/central-lahore-$(FORECAST_PROFILE)
+FORECAST_HYDRAULIC_RESULTS := artifacts/hydraulic-forecast-results/central-lahore-$(FORECAST_PROFILE)
+GULBERG_HYDRAULIC_MODELS := artifacts/hydraulic-ensemble/gulberg-rain100mm-2h-loss5
+GULBERG_HYDRAULIC_RESULTS := artifacts/hydraulic-results/gulberg-rain100mm-2h-loss5
+GULBERG_WEB_SCENARIO := web/public/scenarios/gulberg-rain100mm-2h-loss5
+GULBERG_URBAN_RAW := data/raw/urban-context-gulberg
+GULBERG_URBAN_CONTEXT := web/public/context/gulberg-liberty
 
 build:
 	$(COMPOSE) build terrain-audit
@@ -31,6 +39,17 @@ elevation-control:
 forecast-central-local:
 	.venv/bin/python -m naqsha.forecast --latitude 31.555 --longitude 74.325 --forecast-hours 72 --output $(FORECAST_ARCHIVE)
 
+forecast-hydraulic-build-local:
+	.venv/bin/python -m naqsha.hydraulic_model --forecast $(FORECAST_ARCHIVE) --forecast-profile $(FORECAST_PROFILE) --output $(FORECAST_HYDRAULIC_MODELS) --surface copernicus=artifacts/central-lahore-terrain-ensemble/copernicus/terrain-utm43n.tif --surface fabdem=artifacts/central-lahore-terrain-ensemble/fabdem/terrain-utm43n.tif --surface srtm=artifacts/central-lahore-terrain-ensemble/srtm/terrain-utm43n.tif
+
+forecast-hydraulic-run:
+	docker run --rm --platform linux/amd64 -v "$(CURDIR)/$(FORECAST_HYDRAULIC_MODELS)/copernicus:/data" $(SFINCS_IMAGE)
+	docker run --rm --platform linux/amd64 -v "$(CURDIR)/$(FORECAST_HYDRAULIC_MODELS)/fabdem:/data" $(SFINCS_IMAGE)
+	docker run --rm --platform linux/amd64 -v "$(CURDIR)/$(FORECAST_HYDRAULIC_MODELS)/srtm:/data" $(SFINCS_IMAGE)
+
+forecast-hydraulic-results-local:
+	.venv/bin/python -m naqsha.hydraulic_results --models $(FORECAST_HYDRAULIC_MODELS) --output $(FORECAST_HYDRAULIC_RESULTS)
+
 hydraulic-build:
 	$(COMPOSE) run --rm terrain-audit python -m naqsha.hydraulic_model --output $(HYDRAULIC_MODELS) --surface copernicus=artifacts/central-lahore-terrain-ensemble/copernicus/terrain-utm43n.tif --surface fabdem=artifacts/central-lahore-terrain-ensemble/fabdem/terrain-utm43n.tif --surface srtm=artifacts/central-lahore-terrain-ensemble/srtm/terrain-utm43n.tif
 
@@ -38,6 +57,17 @@ hydraulic-run:
 	docker run --rm --platform linux/amd64 -v "$(CURDIR)/$(HYDRAULIC_MODELS)/copernicus:/data" $(SFINCS_IMAGE)
 	docker run --rm --platform linux/amd64 -v "$(CURDIR)/$(HYDRAULIC_MODELS)/fabdem:/data" $(SFINCS_IMAGE)
 	docker run --rm --platform linux/amd64 -v "$(CURDIR)/$(HYDRAULIC_MODELS)/srtm:/data" $(SFINCS_IMAGE)
+
+hydraulic-gulberg-build-local:
+	.venv/bin/python -m naqsha.hydraulic_model --output $(GULBERG_HYDRAULIC_MODELS) --surface copernicus=artifacts/terrain-ensemble/copernicus/terrain-utm43n.tif --surface fabdem=artifacts/terrain-ensemble/fabdem/terrain-utm43n.tif --surface srtm=artifacts/terrain-ensemble/srtm/terrain-utm43n.tif
+
+hydraulic-gulberg-run:
+	docker run --rm --platform linux/amd64 -v "$(CURDIR)/$(GULBERG_HYDRAULIC_MODELS)/copernicus:/data" $(SFINCS_IMAGE)
+	docker run --rm --platform linux/amd64 -v "$(CURDIR)/$(GULBERG_HYDRAULIC_MODELS)/fabdem:/data" $(SFINCS_IMAGE)
+	docker run --rm --platform linux/amd64 -v "$(CURDIR)/$(GULBERG_HYDRAULIC_MODELS)/srtm:/data" $(SFINCS_IMAGE)
+
+hydraulic-gulberg-results-local:
+	.venv/bin/python -m naqsha.hydraulic_results --models $(GULBERG_HYDRAULIC_MODELS) --output $(GULBERG_HYDRAULIC_RESULTS)
 
 hydraulic-results:
 	$(COMPOSE) run --rm terrain-audit python -m naqsha.hydraulic_results --models $(HYDRAULIC_MODELS) --output $(HYDRAULIC_RESULTS)
@@ -50,17 +80,31 @@ urban-context-download:
 	.venv/bin/overturemaps download --bbox=74.305,31.535,74.345,31.575 -f geojson --type=building -o $(URBAN_RAW)/buildings.geojson
 	curl --fail --silent --show-error --request POST --data-urlencode 'data=[out:json][timeout:180];(way[highway](31.535,74.305,31.575,74.345);way[railway](31.535,74.305,31.575,74.345);way[waterway](31.535,74.305,31.575,74.345);way[natural=water](31.535,74.305,31.575,74.345);way[leisure=park](31.535,74.305,31.575,74.345);node[name](31.535,74.305,31.575,74.345););out geom;' https://overpass-api.de/api/interpreter --output $(URBAN_RAW)/osm-context.json
 
+urban-context-gulberg-download:
+	mkdir -p $(GULBERG_URBAN_RAW)
+	.venv/bin/overturemaps download --bbox=74.329,31.493,74.371,31.535 -f geojson --type=building -o $(GULBERG_URBAN_RAW)/buildings.geojson
+	curl --fail --silent --show-error --request POST --data-urlencode 'data=[out:json][timeout:180];(way[highway](31.493,74.329,31.535,74.371);way[railway](31.493,74.329,31.535,74.371);way[waterway](31.493,74.329,31.535,74.371);way[natural=water](31.493,74.329,31.535,74.371);way[leisure=park](31.493,74.329,31.535,74.371);node[name](31.493,74.329,31.535,74.371););out geom;' https://overpass-api.de/api/interpreter --output $(GULBERG_URBAN_RAW)/osm-context.json
+
 urban-context-export-local:
 	.venv/bin/python -m naqsha.urban_context --buildings $(URBAN_RAW)/buildings.geojson --osm $(URBAN_RAW)/osm-context.json --scenario $(WEB_SCENARIO)/scenario.json --output $(URBAN_CONTEXT)
 
+urban-context-gulberg-export-local:
+	.venv/bin/python -m naqsha.urban_context --buildings $(GULBERG_URBAN_RAW)/buildings.geojson --osm $(GULBERG_URBAN_RAW)/osm-context.json --scenario $(GULBERG_WEB_SCENARIO)/scenario.json --output $(GULBERG_URBAN_CONTEXT)
+
 road-impact-local:
 	.venv/bin/python -m naqsha.road_impact --scenario $(WEB_SCENARIO) --context $(URBAN_CONTEXT)
+
+road-impact-gulberg-local:
+	.venv/bin/python -m naqsha.road_impact --scenario $(GULBERG_WEB_SCENARIO) --context $(GULBERG_URBAN_CONTEXT)
 
 web-export:
 	$(COMPOSE) run --rm terrain-audit python -m naqsha.web_export --models $(HYDRAULIC_MODELS) --results $(HYDRAULIC_RESULTS) --output $(WEB_SCENARIO)
 
 web-export-local:
 	.venv/bin/python -m naqsha.web_export --models $(HYDRAULIC_MODELS) --results $(HYDRAULIC_RESULTS) --output $(WEB_SCENARIO)
+
+web-export-gulberg-local:
+	.venv/bin/python -m naqsha.web_export --models $(GULBERG_HYDRAULIC_MODELS) --results $(GULBERG_HYDRAULIC_RESULTS) --output $(GULBERG_WEB_SCENARIO) --location "Gulberg–Liberty — provisional expansion area"
 
 web-install:
 	npm --prefix web ci

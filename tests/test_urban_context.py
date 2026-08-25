@@ -65,6 +65,7 @@ def test_context_export_encodes_buildings_network_and_labels(tmp_path: Path):
     assert payload["buildings"]["count"] == 1
     assert payload["buildings"]["measuredOrTaggedHeightCount"] == 1
     assert payload["network"]["count"] == 1
+    assert json.loads((output / "network.names.json").read_text()) == ["Test Road"]
     assert {label["name"] for label in payload["labels"]} == {"Test Place", "Test Road"}
     assert np.frombuffer((output / "buildings.height.f32").read_bytes(), dtype="<f4").tolist() == [12]
     assert np.frombuffer((output / "network.index.u32").read_bytes(), dtype="<u4").tolist() == [0, 2, 1]
