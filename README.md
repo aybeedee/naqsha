@@ -24,7 +24,7 @@ The terrain audit:
 8. packages those grids into compact browser assets and presents them in an
    uncertainty-first Three.js viewer;
 9. adds frozen public-data city layers for central Lahore and Gulberg–Liberty,
-   together containing 43,661 building footprints and 6,363 mapped
+   together containing 43,661 building footprints and 6,447 mapped
    road/rail/water/park segments;
 10. optionally drapes live OSM cartography over the terrain and renders either
     instantaneous or peak flood depth as an explicitly display-exaggerated 3D

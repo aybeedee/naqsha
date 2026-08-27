@@ -134,7 +134,7 @@
     "peakAgreementFile": "road-impact-peak-agreement.u8",
     "lengthFile": "road-impact-length.f32",
     "contextId": "gulberg-liberty",
-    "lineCount": 2449,
+    "lineCount": 2529,
     "frameCount": 25,
     "depthScaleMetres": 0.001,
     "nodataDepth": 65535,
@@ -151,9 +151,9 @@
       6
     ],
     "peakSummary": {
-      "roadLengthOver10cmKm": 216.68252563476562,
-      "roadLengthOver30cmKm": 106.52881622314453,
-      "mappedRoadLengthKm": 411.3155212402344
+      "roadLengthOver10cmKm": 216.87547302246094,
+      "roadLengthOver30cmKm": 106.62654876708984,
+      "mappedRoadLengthKm": 414.2140197753906
     },
     "warning": "Screening exposure sampled from a terrain-uncertain 28.65 m grid. It is not a road closure or safe-routing determination."
   }

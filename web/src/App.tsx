@@ -211,7 +211,7 @@ export function App() {
       || second[1].exposedLengthKm - first[1].exposedLengthKm)
     .slice(0, 5)
   const hotspotRadiusCells = Math.ceil(250 / data.metadata.grid.cellSizeMetres)
-  const neighbourhoodHotspots = context.metadata.labels
+  const neighbourhoodCandidates = context.metadata.labels
     .filter((label) => label.category === 'district')
     .map((label) => {
       const centreColumn = Math.round(
@@ -241,6 +241,16 @@ export function App() {
       }
     })
     .filter((hotspot) => hotspot.maximumDepth >= 0.1)
+  const neighbourhoodByName = new Map<string, (typeof neighbourhoodCandidates)[number]>()
+  for (const hotspot of neighbourhoodCandidates) {
+    const existing = neighbourhoodByName.get(hotspot.name)
+    if (!existing || hotspot.maximumDepth > existing.maximumDepth
+      || (hotspot.maximumDepth === existing.maximumDepth
+        && hotspot.wetFraction > existing.wetFraction)) {
+      neighbourhoodByName.set(hotspot.name, hotspot)
+    }
+  }
+  const neighbourhoodHotspots = [...neighbourhoodByName.values()]
     .sort((first, second) => second.maximumDepth - first.maximumDepth
       || second.wetFraction - first.wetFraction)
     .slice(0, 3)
@@ -460,7 +470,7 @@ export function App() {
             <Toggle checked={showBuildings} label="Buildings" helper="Footprints; proxy heights" onChange={setShowBuildings} />
             <Toggle checked={showNetwork} label="Street network" helper="Roads, rail and water" onChange={setShowNetwork} />
             <Toggle checked={showRoadImpacts} label="Road impacts" helper="Depth + terrain agreement" onChange={setShowRoadImpacts} />
-            <Toggle checked={showLabels} label="Place labels" helper="Districts and landmarks" onChange={setShowLabels} />
+            <Toggle checked={showLabels} label="Map labels" helper="Places, roads, landmarks and POIs" onChange={setShowLabels} />
           </div>
         </section>
 

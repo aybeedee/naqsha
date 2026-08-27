@@ -34,6 +34,10 @@ teal in all three. A cell shown in one member is not a verified flooded place.
 - Scenario forcing is shown read-only, with the experimental warning and
   evidence resolution always visible.
 - Buildings, network, labels, and flood depth can be hidden independently.
+- Map labels use category-specific markers, names, and subtypes. The checked
+  contexts contain 407 central-Lahore and 339 Gulberg–Liberty labels. Runtime
+  distance thresholds reveal more detail while zooming, and screen-space
+  collision filtering preserves a readable overview.
 - Road exposure colours and totals are computed for every hydraulic frame.
   Named-road rankings aggregate OSM segments, while district summaries sample
   a 250 m vicinity around map labels; neither is a safe-routing decision.
@@ -72,8 +76,8 @@ provenance. The checked-in hydraulic scenario is about 3.6 MB, so a tile service
 is unnecessary at this scale.
 
 The parallel urban-context contract contains binary footprint rings, per-
-building height/source arrays, network polylines with class/width/name metadata, and
-decluttered labels. It is about 1.2 MB. Its acquisition, interpretation limits,
+building height/source arrays, network polylines with class/width/name metadata,
+and prioritized map labels. Each context is about 1.3–1.5 MB. Its acquisition, interpretation limits,
 and ODbL obligations are documented in [the urban-context decision](urban-context.md).
 
 `grid.geographicBounds` georeferences the optional browser basemap to the UTM

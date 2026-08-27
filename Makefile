@@ -1,6 +1,6 @@
 COMPOSE := $(shell docker compose version >/dev/null 2>&1 && echo "docker compose" || echo "docker-compose")
 
-.PHONY: build audit compare ensemble central-ensemble elevation-control forecast-central-local forecast-hydraulic-build-local forecast-hydraulic-run forecast-hydraulic-results-local hydraulic-build hydraulic-run hydraulic-results hydraulic-gulberg-build-local hydraulic-gulberg-run hydraulic-gulberg-results-local road-impact-local road-impact-gulberg-local urban-context-install urban-context-download urban-context-gulberg-download urban-context-export-local urban-context-gulberg-export-local web-export web-export-local web-export-gulberg-local web-install web-dev web-test web-build test audit-local compare-local ensemble-local central-ensemble-local elevation-control-local hydraulic-build-local hydraulic-results-local test-local lint-local
+.PHONY: build audit compare ensemble central-ensemble elevation-control forecast-central-local forecast-hydraulic-build-local forecast-hydraulic-run forecast-hydraulic-results-local hydraulic-build hydraulic-run hydraulic-results hydraulic-gulberg-build-local hydraulic-gulberg-run hydraulic-gulberg-results-local road-impact-local road-impact-gulberg-local osm-context-central-download osm-context-gulberg-download urban-context-install urban-context-download urban-context-gulberg-download urban-context-export-local urban-context-gulberg-export-local web-export web-export-local web-export-gulberg-local web-install web-dev web-test web-build test audit-local compare-local ensemble-local central-ensemble-local elevation-control-local hydraulic-build-local hydraulic-results-local test-local lint-local
 
 HYDRAULIC_MODELS := artifacts/hydraulic-ensemble/rain100mm-2h-loss5
 HYDRAULIC_RESULTS := artifacts/hydraulic-results/rain100mm-2h-loss5
@@ -78,12 +78,18 @@ urban-context-install:
 urban-context-download:
 	mkdir -p $(URBAN_RAW)
 	.venv/bin/overturemaps download --bbox=74.305,31.535,74.345,31.575 -f geojson --type=building -o $(URBAN_RAW)/buildings.geojson
-	curl --fail --silent --show-error --request POST --data-urlencode 'data=[out:json][timeout:180];(way[highway](31.535,74.305,31.575,74.345);way[railway](31.535,74.305,31.575,74.345);way[waterway](31.535,74.305,31.575,74.345);way[natural=water](31.535,74.305,31.575,74.345);way[leisure=park](31.535,74.305,31.575,74.345);node[name](31.535,74.305,31.575,74.345););out geom;' https://overpass-api.de/api/interpreter --output $(URBAN_RAW)/osm-context.json
+	$(MAKE) osm-context-central-download
+
+osm-context-central-download:
+	.venv/bin/python -m naqsha.osm_context --bbox 74.305,31.535,74.345,31.575 --output $(URBAN_RAW)/osm-context.json
 
 urban-context-gulberg-download:
 	mkdir -p $(GULBERG_URBAN_RAW)
 	.venv/bin/overturemaps download --bbox=74.329,31.493,74.371,31.535 -f geojson --type=building -o $(GULBERG_URBAN_RAW)/buildings.geojson
-	curl --fail --silent --show-error --request POST --data-urlencode 'data=[out:json][timeout:180];(way[highway](31.493,74.329,31.535,74.371);way[railway](31.493,74.329,31.535,74.371);way[waterway](31.493,74.329,31.535,74.371);way[natural=water](31.493,74.329,31.535,74.371);way[leisure=park](31.493,74.329,31.535,74.371);node[name](31.493,74.329,31.535,74.371););out geom;' https://overpass-api.de/api/interpreter --output $(GULBERG_URBAN_RAW)/osm-context.json
+	$(MAKE) osm-context-gulberg-download
+
+osm-context-gulberg-download:
+	.venv/bin/python -m naqsha.osm_context --bbox 74.329,31.493,74.371,31.535 --output $(GULBERG_URBAN_RAW)/osm-context.json
 
 urban-context-export-local:
 	.venv/bin/python -m naqsha.urban_context --buildings $(URBAN_RAW)/buildings.geojson --osm $(URBAN_RAW)/osm-context.json --scenario $(WEB_SCENARIO)/scenario.json --output $(URBAN_CONTEXT)

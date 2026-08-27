@@ -173,7 +173,10 @@ export interface LineClass {
 
 export interface UrbanLabel {
   name: string
-  category: 'district' | 'road' | 'civic' | 'landmark' | 'station'
+  category: 'district' | 'road' | 'transit' | 'landmark' | 'education'
+    | 'healthcare' | 'worship' | 'government' | 'shopping' | 'food'
+    | 'hotel' | 'park' | 'sports' | 'building'
+  kind: string
   priority: number
   x: number
   z: number
@@ -203,6 +206,7 @@ export interface UrbanContextMetadata {
     classes: LineClass[]
   }
   labels: UrbanLabel[]
+  labelCounts?: Record<string, number>
   provenance: {
     overtureRelease: string
     osmTimestamp: string

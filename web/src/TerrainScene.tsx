@@ -38,6 +38,32 @@ interface SceneState {
   frame: number
 }
 
+const LABEL_STYLES: Record<UrbanLabel['category'], { accent: string; marker: string }> = {
+  district: { accent: '#43d5c5', marker: '◆' },
+  road: { accent: '#d6b879', marker: '━' },
+  transit: { accent: '#ed9c67', marker: 'T' },
+  landmark: { accent: '#e8c45f', marker: '★' },
+  education: { accent: '#86bfe0', marker: 'E' },
+  healthcare: { accent: '#ed7770', marker: '+' },
+  worship: { accent: '#bba8dc', marker: 'W' },
+  government: { accent: '#aabbb8', marker: 'G' },
+  shopping: { accent: '#dc91c8', marker: 'S' },
+  food: { accent: '#e7a766', marker: 'F' },
+  hotel: { accent: '#a2ace1', marker: 'H' },
+  park: { accent: '#75bc83', marker: 'P' },
+  sports: { accent: '#74c5a7', marker: '●' },
+  building: { accent: '#9eb2ae', marker: 'B' },
+}
+
+function labelMaximumDistance(priority: number): number {
+  if (priority >= 100) return 18000
+  if (priority >= 88) return 12000
+  if (priority >= 76) return 8400
+  if (priority >= 64) return 5700
+  if (priority >= 52) return 3800
+  return 2400
+}
+
 function resetCamera(state: SceneState, data: ScenarioData, dimension: Dimension): void {
   const span = Math.max(data.metadata.grid.extentWidthMetres, data.metadata.grid.extentHeightMetres)
   if (dimension === '2d') {
@@ -78,28 +104,46 @@ function disposeGroup(group: THREE.Group, disposeMaps = true): void {
 function createLabelSprite(label: UrbanLabel): THREE.Sprite {
   const canvas = document.createElement('canvas')
   canvas.width = 512
-  canvas.height = 96
+  canvas.height = 128
   const drawing = canvas.getContext('2d')!
-  drawing.fillStyle = 'rgba(5, 18, 24, .88)'
+  const style = LABEL_STYLES[label.category]
+  drawing.fillStyle = label.category === 'district'
+    ? 'rgba(5, 18, 24, .78)'
+    : 'rgba(5, 18, 24, .9)'
   drawing.beginPath()
-  drawing.roundRect(2, 2, 508, 92, 12)
+  drawing.roundRect(2, 2, 508, 124, 13)
   drawing.fill()
-  drawing.strokeStyle = label.category === 'road' ? '#b99d72' : '#43d5c5'
-  drawing.lineWidth = 3
+  drawing.strokeStyle = style.accent
+  drawing.lineWidth = label.category === 'district' ? 4 : 2
   drawing.stroke()
-  drawing.fillStyle = '#edf3ee'
-  drawing.font = label.category === 'district' ? '600 31px sans-serif' : '500 27px sans-serif'
+  drawing.fillStyle = style.accent
+  drawing.beginPath()
+  drawing.arc(38, 64, 25, 0, Math.PI * 2)
+  drawing.fill()
+  drawing.fillStyle = '#07141b'
+  drawing.font = '700 25px sans-serif'
   drawing.textAlign = 'center'
   drawing.textBaseline = 'middle'
-  const text = label.name.length > 31 ? `${label.name.slice(0, 29)}…` : label.name
-  drawing.fillText(text, 256, 50)
+  drawing.fillText(style.marker, 38, 65)
+  drawing.fillStyle = '#edf3ee'
+  drawing.font = label.category === 'district' ? '650 57px sans-serif' : '600 45px sans-serif'
+  drawing.textAlign = 'left'
+  drawing.textBaseline = 'middle'
+  const text = label.name.length > 28 ? `${label.name.slice(0, 26)}…` : label.name
+  drawing.fillText(text, 76, label.category === 'district' || label.category === 'road' ? 64 : 47)
+  if (label.category !== 'district' && label.category !== 'road') {
+    drawing.fillStyle = '#8da5a5'
+    drawing.font = '500 28px sans-serif'
+    drawing.fillText(label.kind, 76, 92)
+  }
   const texture = new THREE.CanvasTexture(canvas)
   texture.colorSpace = THREE.SRGBColorSpace
   const material = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false })
   const sprite = new THREE.Sprite(material)
-  const width = label.category === 'district' ? 285 : 245
-  sprite.scale.set(width, width * 96 / 512, 1)
+  const width = label.category === 'district' ? 480 : label.category === 'road' ? 430 : 400
+  sprite.scale.set(width, width * 128 / 512, 1)
   sprite.userData.baseLabelWidth = width
+  sprite.userData.labelPriority = label.priority
   sprite.renderOrder = 10
   return sprite
 }
@@ -220,18 +264,51 @@ export function TerrainScene({
     sceneRef.current = state
     resetCamera(state, data, dimension)
 
+    let renderCount = 0
     const render = () => {
       state.frame = requestAnimationFrame(render)
       controls.update()
-      for (const child of contextModel.children) {
-        if (!(child instanceof THREE.Sprite)) continue
+      renderCount += 1
+      const sprites = contextModel.children
+        .filter((child): child is THREE.Sprite => child instanceof THREE.Sprite)
+        .sort((first, second) => (second.userData.labelPriority as number)
+          - (first.userData.labelPriority as number))
+      const occupied: Array<{ left: number; right: number; top: number; bottom: number }> = []
+      const focalPixels = host.clientHeight / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)))
+      const layoutLabels = renderCount % 3 === 0
+      for (const child of sprites) {
         const width = child.userData.baseLabelWidth as number
-        const distanceScale = THREE.MathUtils.clamp(
-          camera.position.distanceTo(child.position) / 6000,
-          0.22,
-          1.25,
-        )
-        child.scale.set(width * distanceScale, width * 96 / 512 * distanceScale, 1)
+        const priority = child.userData.labelPriority as number
+        const distance = camera.position.distanceTo(child.position)
+        const distanceScale = THREE.MathUtils.clamp(distance / 6000, 0.24, 1.2)
+        child.scale.set(width * distanceScale, width * 128 / 512 * distanceScale, 1)
+        if (!layoutLabels) continue
+        const projected = child.position.clone().project(camera)
+        if (distance > labelMaximumDistance(priority)
+          || projected.z < -1 || projected.z > 1
+          || Math.abs(projected.x) > 1.08 || Math.abs(projected.y) > 1.08) {
+          child.visible = false
+          continue
+        }
+        const centreX = (projected.x + 1) * host.clientWidth / 2
+        const centreY = (1 - projected.y) * host.clientHeight / 2
+        const pixelWidth = width * distanceScale / distance * focalPixels
+        const pixelHeight = pixelWidth * 128 / 512
+        const rectangle = {
+          left: centreX - pixelWidth / 2 - 3,
+          right: centreX + pixelWidth / 2 + 3,
+          top: centreY - pixelHeight / 2 - 2,
+          bottom: centreY + pixelHeight / 2 + 2,
+        }
+        if (rectangle.right > host.clientWidth - 255 || rectangle.bottom > host.clientHeight - 96) {
+          child.visible = false
+          continue
+        }
+        const overlaps = occupied.some((other) => rectangle.left < other.right
+          && rectangle.right > other.left && rectangle.top < other.bottom
+          && rectangle.bottom > other.top)
+        child.visible = !overlaps
+        if (!overlaps) occupied.push(rectangle)
       }
       renderer.render(scene, camera)
     }
@@ -383,7 +460,7 @@ export function TerrainScene({
       }
       for (const label of context.metadata.labels) {
         const sprite = createLabelSprite(label)
-        const y = elevationAt(label.x, label.z, elevationOptions) + (dimension === '2d' ? 9 : 30)
+        const y = elevationAt(label.x, label.z, elevationOptions) + (dimension === '2d' ? 9 : 28)
         sprite.position.set(label.x, y, label.z)
         state.contextModel.add(sprite)
       }

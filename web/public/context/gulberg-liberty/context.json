@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "crs": "EPSG:32643",
   "origin": {
     "easting": 438284.09442222706,
@@ -22,7 +22,7 @@
     "inferredHeightMetres": 8
   },
   "network": {
-    "count": 2449,
+    "count": 2529,
     "coordinateFile": "network.xy.f32",
     "indexFile": "network.index.u32",
     "nameFile": "network.names.json",
@@ -93,175 +93,1520 @@
     {
       "name": "Cavalry Ground",
       "category": "district",
-      "priority": 100,
+      "priority": 108,
+      "kind": "District",
       "x": 1689.46,
       "z": 1420.93
     },
     {
+      "name": "Cavalry Ground",
+      "category": "district",
+      "priority": 108,
+      "kind": "District",
+      "x": 1810.72,
+      "z": 1387.82
+    },
+    {
       "name": "Gulberg",
       "category": "district",
-      "priority": 100,
+      "priority": 108,
+      "kind": "District",
       "x": -666.62,
       "z": 223.82
     },
     {
       "name": "Lahore Cantonment",
-      "category": "station",
-      "priority": 94,
+      "category": "transit",
+      "priority": 100,
+      "kind": "Railway station",
       "x": 1064.71,
       "z": -1822.2
     },
     {
       "name": "Abdul Rehman Chughtai Museum",
       "category": "landmark",
-      "priority": 90,
+      "priority": 96,
+      "kind": "Museum",
       "x": -1862.58,
       "z": 905.39
     },
     {
+      "name": "Akram Abad",
+      "category": "district",
+      "priority": 96,
+      "kind": "Neighbourhood",
+      "x": 909.3,
+      "z": 2036.02
+    },
+    {
       "name": "Askari 2",
       "category": "district",
-      "priority": 88,
+      "priority": 96,
+      "kind": "Neighbourhood",
       "x": 1162.34,
       "z": -1211.8
     },
     {
+      "name": "Basti Allah Hoo",
+      "category": "district",
+      "priority": 96,
+      "kind": "Neighbourhood",
+      "x": 964.47,
+      "z": -1237.88
+    },
+    {
       "name": "CBD Walton",
       "category": "district",
-      "priority": 88,
+      "priority": 96,
+      "kind": "Neighbourhood",
       "x": -762.94,
       "z": 1680.33
     },
     {
+      "name": "CBD Walton",
+      "category": "district",
+      "priority": 96,
+      "kind": "Neighbourhood",
+      "x": -582.43,
+      "z": 2002.24
+    },
+    {
+      "name": "Canal Park",
+      "category": "district",
+      "priority": 96,
+      "kind": "Neighbourhood",
+      "x": -652.67,
+      "z": -1398.89
+    },
+    {
+      "name": "Fatehabad",
+      "category": "district",
+      "priority": 96,
+      "kind": "Neighbourhood",
+      "x": 1058.75,
+      "z": -1062.02
+    },
+    {
       "name": "Gulbahar Colony",
       "category": "district",
-      "priority": 88,
+      "priority": 96,
+      "kind": "Neighbourhood",
       "x": 906.4,
       "z": 1612.58
     },
     {
+      "name": "Gulbahar Colony",
+      "category": "district",
+      "priority": 96,
+      "kind": "Neighbourhood",
+      "x": 883.43,
+      "z": 1628.11
+    },
+    {
+      "name": "Gulberg",
+      "category": "district",
+      "priority": 96,
+      "kind": "Neighbourhood",
+      "x": -892.24,
+      "z": 2170.01
+    },
+    {
+      "name": "Gulberg",
+      "category": "district",
+      "priority": 96,
+      "kind": "Neighbourhood",
+      "x": -323.13,
+      "z": 88.9
+    },
+    {
+      "name": "Husnainabad",
+      "category": "district",
+      "priority": 96,
+      "kind": "Neighbourhood",
+      "x": 997.36,
+      "z": -37.75
+    },
+    {
+      "name": "Ittehad Colony",
+      "category": "district",
+      "priority": 96,
+      "kind": "Neighbourhood",
+      "x": 841.85,
+      "z": 843.1
+    },
+    {
       "name": "Jinnah Park",
       "category": "district",
-      "priority": 88,
+      "priority": 96,
+      "kind": "Neighbourhood",
       "x": 871.05,
       "z": -897.29
     },
     {
+      "name": "Jinnah Park Gulberg Road",
+      "category": "district",
+      "priority": 96,
+      "kind": "Neighbourhood",
+      "x": 854.86,
+      "z": -930.55
+    },
+    {
       "name": "Kabootarpura",
       "category": "district",
-      "priority": 88,
+      "priority": 96,
+      "kind": "Neighbourhood",
       "x": 547.72,
       "z": 1059.57
     },
     {
+      "name": "Khan Colony Gulberg",
+      "category": "district",
+      "priority": 96,
+      "kind": "Neighbourhood",
+      "x": 1037.18,
+      "z": -596.85
+    },
+    {
+      "name": "Liberty Market",
+      "category": "district",
+      "priority": 96,
+      "kind": "Neighbourhood",
+      "x": -391.21,
+      "z": 298.87
+    },
+    {
       "name": "Makkah Colony",
       "category": "district",
-      "priority": 88,
+      "priority": 96,
+      "kind": "Neighbourhood",
       "x": 533.29,
       "z": 1867.35
     },
     {
-      "name": "Nabipura",
+      "name": "Makkah Colony",
       "category": "district",
-      "priority": 88,
-      "x": 860.14,
-      "z": -135.69
+      "priority": 96,
+      "kind": "Neighbourhood",
+      "x": 533.0,
+      "z": 1900.35
     },
     {
-      "name": "Rehman Park",
+      "name": "Millat Colony",
       "category": "district",
-      "priority": 88,
-      "x": 932.62,
-      "z": -1149.92
+      "priority": 96,
+      "kind": "Neighbourhood",
+      "x": 801.15,
+      "z": -1300.37
     },
     {
-      "name": "Saint John Park",
+      "name": "Model Colony",
       "category": "district",
-      "priority": 88,
-      "x": 1481.56,
-      "z": -1541.26
-    },
-    {
-      "name": "Central Institute Of Management & Science",
-      "category": "civic",
-      "priority": 86,
-      "x": -1388.56,
-      "z": 1771.87
-    },
-    {
-      "name": "Concordia College",
-      "category": "civic",
-      "priority": 86,
-      "x": -1516.12,
-      "z": 1670.47
-    },
-    {
-      "name": "Forman Christian College University",
-      "category": "civic",
-      "priority": 86,
-      "x": -1675.72,
-      "z": -936.38
-    },
-    {
-      "name": "Lahore Leads University",
-      "category": "civic",
-      "priority": 86,
-      "x": -2000.53,
-      "z": 1203.67
-    },
-    {
-      "name": "Pakistan College of Law",
-      "category": "civic",
-      "priority": 86,
-      "x": -1776.79,
-      "z": 1246.9
-    },
-    {
-      "name": "Baba Qutab Shah Mazar",
-      "category": "landmark",
-      "priority": 84,
-      "x": -105.68,
-      "z": 1337.0
+      "priority": 96,
+      "kind": "Neighbourhood",
+      "x": -70.87,
+      "z": 1652.6
     },
     {
       "name": "Akram Complex Hospital",
-      "category": "civic",
-      "priority": 78,
+      "category": "healthcare",
+      "priority": 94,
+      "kind": "Hospital",
       "x": -592.25,
       "z": -2153.76
     },
     {
       "name": "Al Mairah Dental and Cosmetics Clinic",
-      "category": "civic",
-      "priority": 78,
+      "category": "healthcare",
+      "priority": 94,
+      "kind": "Hospital",
       "x": 1572.53,
       "z": 1619.09
     },
     {
       "name": "Amanat Eye Hospital",
-      "category": "civic",
-      "priority": 78,
+      "category": "healthcare",
+      "priority": 94,
+      "kind": "Hospital",
       "x": -910.32,
       "z": -478.81
+    },
+    {
+      "name": "Bari Clinic & Hospital",
+      "category": "healthcare",
+      "priority": 94,
+      "kind": "Hospital",
+      "x": -501.29,
+      "z": 1313.13
+    },
+    {
+      "name": "Cavalry Hospital Lahore",
+      "category": "healthcare",
+      "priority": 94,
+      "kind": "Hospital",
+      "x": 1189.41,
+      "z": 1354.15
+    },
+    {
+      "name": "Central Institute Of Management & Science",
+      "category": "education",
+      "priority": 94,
+      "kind": "University",
+      "x": -1388.56,
+      "z": 1771.87
+    },
+    {
+      "name": "Fazal Cardiac Hospital",
+      "category": "healthcare",
+      "priority": 94,
+      "kind": "Hospital",
+      "x": -404.24,
+      "z": 581.99
+    },
+    {
+      "name": "Forman Christian College",
+      "category": "education",
+      "priority": 94,
+      "kind": "University",
+      "x": -1578.89,
+      "z": -829.01
+    },
+    {
+      "name": "Forman Christian College University",
+      "category": "education",
+      "priority": 94,
+      "kind": "University",
+      "x": -1675.72,
+      "z": -936.38
+    },
+    {
+      "name": "Hijaz Hospital Lahore",
+      "category": "healthcare",
+      "priority": 94,
+      "kind": "Hospital",
+      "x": -414.76,
+      "z": -142.34
+    },
+    {
+      "name": "Hospital Hudson Silva Lions Eye Hospital",
+      "category": "healthcare",
+      "priority": 94,
+      "kind": "Hospital",
+      "x": -528.22,
+      "z": -987.95
+    },
+    {
+      "name": "IOM Health Assessment Centre",
+      "category": "healthcare",
+      "priority": 94,
+      "kind": "Hospital",
+      "x": -717.82,
+      "z": 1397.33
+    },
+    {
+      "name": "Lahore Leads University",
+      "category": "education",
+      "priority": 94,
+      "kind": "University",
+      "x": -2000.53,
+      "z": 1203.67
+    },
+    {
+      "name": "Masood Hospital",
+      "category": "healthcare",
+      "priority": 94,
+      "kind": "Hospital",
+      "x": -1867.11,
+      "z": 959.5
+    },
+    {
+      "name": "Punjab Medical Center",
+      "category": "healthcare",
+      "priority": 94,
+      "kind": "Hospital",
+      "x": -481.62,
+      "z": -2259.33
+    },
+    {
+      "name": "United Christian Hospital",
+      "category": "healthcare",
+      "priority": 94,
+      "kind": "Hospital",
+      "x": -908.76,
+      "z": 589.67
+    },
+    {
+      "name": "United Christian Hospital",
+      "category": "healthcare",
+      "priority": 94,
+      "kind": "Hospital",
+      "x": -852.32,
+      "z": 629.44
+    },
+    {
+      "name": "University of Home Economics",
+      "category": "education",
+      "priority": 94,
+      "kind": "University",
+      "x": 167.08,
+      "z": -1261.77
+    },
+    {
+      "name": "\u0632\u06cc\u0646\u0628 \u0645\u06cc\u0645\u0648\u0631\u06cc\u0644 \u06c1\u0633\u067e\u062a\u0627\u0644",
+      "category": "healthcare",
+      "priority": 94,
+      "kind": "Hospital",
+      "x": -1952.93,
+      "z": 1088.55
+    },
+    {
+      "name": "Baba Qutab Shah Mazar",
+      "category": "landmark",
+      "priority": 90,
+      "kind": "Monument",
+      "x": -105.68,
+      "z": 1337.0
+    },
+    {
+      "name": "Tomb of Shah Jamal",
+      "category": "landmark",
+      "priority": 90,
+      "kind": "Tomb",
+      "x": -1983.96,
+      "z": -1576.72
+    },
+    {
+      "name": "(old) Daewoo Bus Terminal",
+      "category": "transit",
+      "priority": 88,
+      "kind": "Transit station",
+      "x": -1772.76,
+      "z": 884.24
+    },
+    {
+      "name": "Audit and Accounts Training Institute",
+      "category": "education",
+      "priority": 88,
+      "kind": "College",
+      "x": 783.95,
+      "z": 677.19
+    },
+    {
+      "name": "Concordia College",
+      "category": "education",
+      "priority": 88,
+      "kind": "College",
+      "x": -1516.12,
+      "z": 1670.47
+    },
+    {
+      "name": "Gaddafi Stadium",
+      "category": "sports",
+      "priority": 88,
+      "kind": "Stadium",
+      "x": -1572.95,
+      "z": 63.32
+    },
+    {
+      "name": "Government College For Boys - Gulberg",
+      "category": "education",
+      "priority": 88,
+      "kind": "College",
+      "x": -1592.44,
+      "z": 566.26
+    },
+    {
+      "name": "National Hockey Stadium",
+      "category": "sports",
+      "priority": 88,
+      "kind": "Stadium",
+      "x": -1414.36,
+      "z": 331.17
+    },
+    {
+      "name": "Next Step College",
+      "category": "education",
+      "priority": 88,
+      "kind": "College",
+      "x": -1494.3,
+      "z": 1727.97
+    },
+    {
+      "name": "Pakistan College of Law",
+      "category": "education",
+      "priority": 88,
+      "kind": "College",
+      "x": -1776.79,
+      "z": 1246.9
+    },
+    {
+      "name": "Punjab Stadium",
+      "category": "sports",
+      "priority": 88,
+      "kind": "Stadium",
+      "x": -1717.49,
+      "z": 351.52
+    },
+    {
+      "name": "Superior College of Technology",
+      "category": "education",
+      "priority": 88,
+      "kind": "College",
+      "x": -1710.31,
+      "z": 1380.67
+    },
+    {
+      "name": "CITY TOWER",
+      "category": "landmark",
+      "priority": 80,
+      "kind": "Viewpoint",
+      "x": -170.52,
+      "z": -995.14
+    },
+    {
+      "name": "Ejaz Art Gallery",
+      "category": "landmark",
+      "priority": 80,
+      "kind": "Gallery",
+      "x": 229.21,
+      "z": 10.71
+    },
+    {
+      "name": "FORTRESS",
+      "category": "landmark",
+      "priority": 80,
+      "kind": "Viewpoint",
+      "x": 1498.62,
+      "z": -1941.52
+    },
+    {
+      "name": "Netkom Office",
+      "category": "landmark",
+      "priority": 80,
+      "kind": "Viewpoint",
+      "x": -1478.5,
+      "z": -2211.35
+    },
+    {
+      "name": "Sheerpao",
+      "category": "landmark",
+      "priority": 80,
+      "kind": "Viewpoint",
+      "x": 926.54,
+      "z": -1673.56
+    },
+    {
+      "name": "Tricon",
+      "category": "landmark",
+      "priority": 80,
+      "kind": "Viewpoint",
+      "x": 320.03,
+      "z": -1906.14
+    },
+    {
+      "name": "Ufone MSC New",
+      "category": "landmark",
+      "priority": 80,
+      "kind": "Viewpoint",
+      "x": -197.19,
+      "z": -342.58
+    },
+    {
+      "name": "Army Checkpoint",
+      "category": "government",
+      "priority": 78,
+      "kind": "Police",
+      "x": 1681.41,
+      "z": 1006.13
+    },
+    {
+      "name": "Bakar Mandi Lahore",
+      "category": "shopping",
+      "priority": 78,
+      "kind": "Marketplace",
+      "x": -800.35,
+      "z": -184.32
+    },
+    {
+      "name": "Emporium Market",
+      "category": "shopping",
+      "priority": 78,
+      "kind": "Marketplace",
+      "x": -83.84,
+      "z": 2195.4
+    },
+    {
+      "name": "Fortress Market",
+      "category": "shopping",
+      "priority": 78,
+      "kind": "Marketplace",
+      "x": 1361.96,
+      "z": -2114.9
+    },
+    {
+      "name": "Gulberg Police Station",
+      "category": "government",
+      "priority": 78,
+      "kind": "Police",
+      "x": -693.63,
+      "z": 313.94
+    },
+    {
+      "name": "Liberty Flower Market",
+      "category": "shopping",
+      "priority": 78,
+      "kind": "Marketplace",
+      "x": -463.52,
+      "z": 592.75
+    },
+    {
+      "name": "Liberty Market",
+      "category": "shopping",
+      "priority": 78,
+      "kind": "Marketplace",
+      "x": -478.15,
+      "z": 304.28
+    },
+    {
+      "name": "Office Qurban Line",
+      "category": "government",
+      "priority": 78,
+      "kind": "Police",
+      "x": 710.65,
+      "z": -2124.51
+    },
+    {
+      "name": "Aizar Ground",
+      "category": "park",
+      "priority": 76,
+      "kind": "Park",
+      "x": 220.65,
+      "z": 1078.18
+    },
+    {
+      "name": "Al Shaukat Medical & Kidney Centre",
+      "category": "healthcare",
+      "priority": 76,
+      "kind": "Clinic",
+      "x": -106.72,
+      "z": 431.64
+    },
+    {
+      "name": "Askari 2",
+      "category": "worship",
+      "priority": 76,
+      "kind": "Muslim",
+      "x": 1290.44,
+      "z": -995.03
+    },
+    {
+      "name": "Aslam Riaz Park",
+      "category": "park",
+      "priority": 76,
+      "kind": "Park",
+      "x": -162.79,
+      "z": -1867.68
+    },
+    {
+      "name": "B Block Mosque",
+      "category": "worship",
+      "priority": 76,
+      "kind": "Muslim",
+      "x": -701.64,
+      "z": -847.93
+    },
+    {
+      "name": "Bab-ul-Mustjab",
+      "category": "worship",
+      "priority": 76,
+      "kind": "Muslim",
+      "x": -1769.23,
+      "z": 1206.61
+    },
+    {
+      "name": "Block T Park",
+      "category": "park",
+      "priority": 76,
+      "kind": "Park",
+      "x": 446.1,
+      "z": -741.88
+    },
+    {
+      "name": "Bridge Colony Park",
+      "category": "park",
+      "priority": 76,
+      "kind": "Park",
+      "x": 1388.5,
+      "z": -813.58
+    },
+    {
+      "name": "C2 Park",
+      "category": "park",
+      "priority": 76,
+      "kind": "Park",
+      "x": -234.59,
+      "z": 196.84
     },
     {
       "name": "Canal Bank Road",
       "category": "road",
       "priority": 76,
+      "kind": "Major road",
       "x": -1904.7,
       "z": -1055.13
+    },
+    {
+      "name": "Cavalry Ground Park",
+      "category": "park",
+      "priority": 76,
+      "kind": "Park",
+      "x": 1569.06,
+      "z": 1485.88
+    },
+    {
+      "name": "Central Mosque Falcon Housing Complex",
+      "category": "worship",
+      "priority": 76,
+      "kind": "Muslim",
+      "x": -32.48,
+      "z": 2146.4
+    },
+    {
+      "name": "Chughtais Lahore Lab",
+      "category": "healthcare",
+      "priority": 76,
+      "kind": "Clinic",
+      "x": 1238.04,
+      "z": 1362.66
+    },
+    {
+      "name": "Doongi Ground",
+      "category": "park",
+      "priority": 76,
+      "kind": "Park",
+      "x": 218.51,
+      "z": -634.88
     },
     {
       "name": "East Canal Bank Road",
       "category": "road",
       "priority": 76,
+      "kind": "Major road",
       "x": -1224.0,
       "z": -1837.23
+    },
+    {
+      "name": "FCC Park",
+      "category": "park",
+      "priority": 76,
+      "kind": "Park",
+      "x": -1224.33,
+      "z": -1343.71
+    },
+    {
+      "name": "Football League Practice Ground",
+      "category": "park",
+      "priority": 76,
+      "kind": "Park",
+      "x": 310.44,
+      "z": -685.14
+    },
+    {
+      "name": "Forman Christian College Masjid",
+      "category": "worship",
+      "priority": 76,
+      "kind": "Muslim",
+      "x": -1287.91,
+      "z": -581.88
+    },
+    {
+      "name": "Fortress",
+      "category": "worship",
+      "priority": 76,
+      "kind": "Muslim",
+      "x": 1838.27,
+      "z": -1811.91
+    },
+    {
+      "name": "Ghalib Market",
+      "category": "worship",
+      "priority": 76,
+      "kind": "Muslim",
+      "x": 472.68,
+      "z": 174.02
+    },
+    {
+      "name": "Gulshan-e-Rasool",
+      "category": "worship",
+      "priority": 76,
+      "kind": "Muslim",
+      "x": 966.04,
+      "z": -2067.04
+    },
+    {
+      "name": "Hearing Clinic",
+      "category": "healthcare",
+      "priority": 76,
+      "kind": "Clinic",
+      "x": 29.57,
+      "z": 851.87
+    },
+    {
+      "name": "Hijaz Mosque",
+      "category": "worship",
+      "priority": 76,
+      "kind": "Muslim",
+      "x": -386.98,
+      "z": -169.84
+    },
+    {
+      "name": "Hockey Ground",
+      "category": "park",
+      "priority": 76,
+      "kind": "Park",
+      "x": -1408.14,
+      "z": -886.71
+    },
+    {
+      "name": "Imrania",
+      "category": "worship",
+      "priority": 76,
+      "kind": "Muslim",
+      "x": -681.59,
+      "z": -1682.78
+    },
+    {
+      "name": "Jam-e-Shireen Park",
+      "category": "park",
+      "priority": 76,
+      "kind": "Park",
+      "x": -705.4,
+      "z": 796.13
+    },
+    {
+      "name": "Jamia Hanfiyah Masjid",
+      "category": "worship",
+      "priority": 76,
+      "kind": "Muslim",
+      "x": 21.24,
+      "z": -778.3
+    },
+    {
+      "name": "Jamia Mohammadia",
+      "category": "worship",
+      "priority": 76,
+      "kind": "Muslim",
+      "x": -1569.64,
+      "z": 1719.13
+    },
+    {
+      "name": "Khalid Masjid",
+      "category": "worship",
+      "priority": 76,
+      "kind": "Muslim",
+      "x": 1559.15,
+      "z": 1566.02
+    },
+    {
+      "name": "Ladies Park",
+      "category": "park",
+      "priority": 76,
+      "kind": "Park",
+      "x": -50.33,
+      "z": 2313.2
+    },
+    {
+      "name": "Liberty Fountain",
+      "category": "park",
+      "priority": 76,
+      "kind": "Park",
+      "x": -884.13,
+      "z": 375.64
+    },
+    {
+      "name": "London Bridge",
+      "category": "park",
+      "priority": 76,
+      "kind": "Park",
+      "x": -1599.44,
+      "z": -841.98
+    },
+    {
+      "name": "Main Market Mosque",
+      "category": "worship",
+      "priority": 76,
+      "kind": "Muslim",
+      "x": -464.77,
+      "z": -1108.04
+    },
+    {
+      "name": "Masjid Askari Villas",
+      "category": "worship",
+      "priority": 76,
+      "kind": "Muslim",
+      "x": 1794.66,
+      "z": 726.54
+    },
+    {
+      "name": "Mini Market Park",
+      "category": "park",
+      "priority": 76,
+      "kind": "Park",
+      "x": 128.57,
+      "z": -759.38
+    },
+    {
+      "name": "National Bank Park",
+      "category": "park",
+      "priority": 76,
+      "kind": "Park",
+      "x": -1562.21,
+      "z": 878.3
+    },
+    {
+      "name": "Parking lot",
+      "category": "park",
+      "priority": 76,
+      "kind": "Park",
+      "x": 1613.86,
+      "z": -2294.09
+    },
+    {
+      "name": "Public Garden",
+      "category": "park",
+      "priority": 76,
+      "kind": "Park",
+      "x": 261.91,
+      "z": 304.54
+    },
+    {
+      "name": "Qadriya Rizvia",
+      "category": "worship",
+      "priority": 76,
+      "kind": "Muslim",
+      "x": 679.77,
+      "z": 507.63
+    },
+    {
+      "name": "Rehmania",
+      "category": "worship",
+      "priority": 76,
+      "kind": "Muslim",
+      "x": 680.54,
+      "z": -1575.63
+    },
+    {
+      "name": "Shah Jamal Tomb",
+      "category": "worship",
+      "priority": 76,
+      "kind": "Muslim",
+      "x": -1993.18,
+      "z": -1568.35
+    },
+    {
+      "name": "Shane islam",
+      "category": "worship",
+      "priority": 76,
+      "kind": "Muslim",
+      "x": 336.34,
+      "z": 580.8
+    },
+    {
+      "name": "Shrine of Shah Miskin",
+      "category": "worship",
+      "priority": 76,
+      "kind": "Muslim",
+      "x": 1732.91,
+      "z": -686.77
+    },
+    {
+      "name": "St. Mary Church",
+      "category": "worship",
+      "priority": 76,
+      "kind": "Christian",
+      "x": 312.8,
+      "z": -602.6
+    },
+    {
+      "name": "Aashiana Shopping Centre",
+      "category": "shopping",
+      "priority": 72,
+      "kind": "Mall",
+      "x": -703.11,
+      "z": 160.65
+    },
+    {
+      "name": "Al Burhan",
+      "category": "education",
+      "priority": 72,
+      "kind": "School",
+      "x": 260.79,
+      "z": 381.94
+    },
+    {
+      "name": "Al Burhan",
+      "category": "education",
+      "priority": 72,
+      "kind": "School",
+      "x": 255.83,
+      "z": 531.4
+    },
+    {
+      "name": "Al Fatah Exclusive Mall",
+      "category": "shopping",
+      "priority": 72,
+      "kind": "Mall",
+      "x": 272.16,
+      "z": 778.87
+    },
+    {
+      "name": "Al Hafeez",
+      "category": "shopping",
+      "priority": 72,
+      "kind": "Mall",
+      "x": 197.94,
+      "z": 431.92
+    },
+    {
+      "name": "Ali Towers",
+      "category": "shopping",
+      "priority": 72,
+      "kind": "Mall",
+      "x": 82.45,
+      "z": 321.74
+    },
+    {
+      "name": "Allied School",
+      "category": "education",
+      "priority": 72,
+      "kind": "School",
+      "x": -1988.11,
+      "z": 1041.08
+    },
+    {
+      "name": "American National School",
+      "category": "education",
+      "priority": 72,
+      "kind": "School",
+      "x": 127.37,
+      "z": 1133.99
+    },
+    {
+      "name": "Asif Computers",
+      "category": "shopping",
+      "priority": 72,
+      "kind": "Mall",
+      "x": -857.39,
+      "z": -206.44
+    },
+    {
+      "name": "Auriga",
+      "category": "shopping",
+      "priority": 72,
+      "kind": "Mall",
+      "x": -219.65,
+      "z": -1153.15
+    },
+    {
+      "name": "Beaconhouse School System Garden Town Campus",
+      "category": "education",
+      "priority": 72,
+      "kind": "School",
+      "x": -1964.52,
+      "z": 921.5
+    },
+    {
+      "name": "Big City Tower",
+      "category": "shopping",
+      "priority": 72,
+      "kind": "Mall",
+      "x": -990.55,
+      "z": 403.14
+    },
+    {
+      "name": "Blue Mall",
+      "category": "shopping",
+      "priority": 72,
+      "kind": "Mall",
+      "x": 152.16,
+      "z": -525.78
+    },
+    {
+      "name": "Bridge accademy ",
+      "category": "education",
+      "priority": 72,
+      "kind": "School",
+      "x": -474.33,
+      "z": 57.11
+    },
+    {
+      "name": "C Mess",
+      "category": "government",
+      "priority": 72,
+      "kind": "Government office",
+      "x": 1816.46,
+      "z": -1752.82
+    },
+    {
+      "name": "Centre Point Plaza",
+      "category": "shopping",
+      "priority": 72,
+      "kind": "Mall",
+      "x": -1330.15,
+      "z": 759.06
+    },
+    {
+      "name": "Chen one",
+      "category": "shopping",
+      "priority": 72,
+      "kind": "Supermarket",
+      "x": -729.55,
+      "z": -249.6
+    },
+    {
+      "name": "City District Government Girls High School Kabootarpura",
+      "category": "education",
+      "priority": 72,
+      "kind": "School",
+      "x": 582.28,
+      "z": 1013.72
+    },
+    {
+      "name": "City Mall",
+      "category": "shopping",
+      "priority": 72,
+      "kind": "Mall",
+      "x": -135.98,
+      "z": -1051.64
+    },
+    {
+      "name": "Corvit Class Rooms",
+      "category": "education",
+      "priority": 72,
+      "kind": "School",
+      "x": -249.08,
+      "z": -89.02
+    },
+    {
+      "name": "Corvit Lahore",
+      "category": "education",
+      "priority": 72,
+      "kind": "School",
+      "x": -355.96,
+      "z": -4.82
+    },
+    {
+      "name": "CyberMart PK",
+      "category": "shopping",
+      "priority": 72,
+      "kind": "Supermarket",
+      "x": -121.01,
+      "z": -958.85
+    },
+    {
+      "name": "Dawn Model School",
+      "category": "education",
+      "priority": 72,
+      "kind": "School",
+      "x": -1397.92,
+      "z": 1999.99
+    },
+    {
+      "name": "Deen Schooling System",
+      "category": "education",
+      "priority": 72,
+      "kind": "School",
+      "x": -165.97,
+      "z": -267.59
+    },
+    {
+      "name": "Department Store",
+      "category": "shopping",
+      "priority": 72,
+      "kind": "Department Store",
+      "x": 1375.0,
+      "z": -1167.11
+    },
+    {
+      "name": "ESNA FOUNDATION",
+      "category": "education",
+      "priority": 72,
+      "kind": "School",
+      "x": -1159.9,
+      "z": -983.89
+    },
+    {
+      "name": "Firdous Market",
+      "category": "shopping",
+      "priority": 72,
+      "kind": "Supermarket",
+      "x": -139.0,
+      "z": 1253.85
+    },
+    {
+      "name": "Fortress Square Mall",
+      "category": "shopping",
+      "priority": 72,
+      "kind": "Mall",
+      "x": 1255.97,
+      "z": -2021.86
+    },
+    {
+      "name": "Fortress Stadium Lahore",
+      "category": "shopping",
+      "priority": 72,
+      "kind": "Mall",
+      "x": 1534.38,
+      "z": -1956.62
+    },
+    {
+      "name": "Galleria",
+      "category": "shopping",
+      "priority": 72,
+      "kind": "Mall",
+      "x": 142.26,
+      "z": -1967.52
+    },
+    {
+      "name": "Govt High School for Boys Gulberg 2",
+      "category": "education",
+      "priority": 72,
+      "kind": "School",
+      "x": -449.13,
+      "z": -1435.91
+    },
+    {
+      "name": "Gulberg Centre",
+      "category": "shopping",
+      "priority": 72,
+      "kind": "Mall",
+      "x": -294.6,
+      "z": -760.57
+    },
+    {
+      "name": "H Karim Baksh",
+      "category": "shopping",
+      "priority": 72,
+      "kind": "Supermarket",
+      "x": -732.43,
+      "z": 512.86
+    },
+    {
+      "name": "Hafeez Centre",
+      "category": "shopping",
+      "priority": 72,
+      "kind": "Mall",
+      "x": -675.26,
+      "z": -230.46
+    },
+    {
+      "name": "Hajvery University Euro Campus",
+      "category": "education",
+      "priority": 72,
+      "kind": "School",
+      "x": 774.1,
+      "z": 1089.96
+    },
+    {
+      "name": "Hyperstar",
+      "category": "shopping",
+      "priority": 72,
+      "kind": "Department Store",
+      "x": 1238.53,
+      "z": -2306.19
+    },
+    {
+      "name": "Jalal Sons",
+      "category": "shopping",
+      "priority": 72,
+      "kind": "Supermarket",
+      "x": -414.53,
+      "z": -1083.3
+    },
+    {
+      "name": "Liberty Heights",
+      "category": "shopping",
+      "priority": 72,
+      "kind": "Department Store",
+      "x": -774.65,
+      "z": 287.29
+    },
+    {
+      "name": "Liberty Plaza",
+      "category": "shopping",
+      "priority": 72,
+      "kind": "Mall",
+      "x": -328.81,
+      "z": 468.28
+    },
+    {
+      "name": "London School of Management & Technology",
+      "category": "education",
+      "priority": 72,
+      "kind": "School",
+      "x": -1381.78,
+      "z": 2044.67
+    },
+    {
+      "name": "Main Market",
+      "category": "shopping",
+      "priority": 72,
+      "kind": "Mall",
+      "x": -365.24,
+      "z": -1130.43
+    },
+    {
+      "name": "Mall 1",
+      "category": "shopping",
+      "priority": 72,
+      "kind": "Mall",
+      "x": -390.01,
+      "z": -506.46
+    },
+    {
+      "name": "Mineral Centre Lahore",
+      "category": "government",
+      "priority": 72,
+      "kind": "Government office",
+      "x": -1843.08,
+      "z": -413.16
+    },
+    {
+      "name": "Mini Market",
+      "category": "shopping",
+      "priority": 72,
+      "kind": "Mall",
+      "x": 131.0,
+      "z": -759.54
+    },
+    {
+      "name": "Ministry of Foreign Affairs Regional Office",
+      "category": "government",
+      "priority": 72,
+      "kind": "Government office",
+      "x": -1251.24,
+      "z": -2107.53
+    },
+    {
+      "name": "New Auriga Shopping Mall",
+      "category": "shopping",
+      "priority": 72,
+      "kind": "Mall",
+      "x": -199.95,
+      "z": -1201.9
+    },
+    {
+      "name": "PAKISTAN HOCKEY FEDERATION",
+      "category": "government",
+      "priority": 72,
+      "kind": "Government office",
+      "x": -1499.49,
+      "z": 310.54
+    },
+    {
+      "name": "Pace",
+      "category": "shopping",
+      "priority": 72,
+      "kind": "Department Store",
+      "x": 1217.51,
+      "z": -2063.28
+    },
+    {
+      "name": "Pace Mall",
+      "category": "shopping",
+      "priority": 72,
+      "kind": "Mall",
+      "x": -711.32,
+      "z": -145.24
+    },
+    {
+      "name": "Pace Shopping Mall",
+      "category": "shopping",
+      "priority": 72,
+      "kind": "Mall",
+      "x": 191.25,
+      "z": -202.52
+    },
+    {
+      "name": "Pakistan Cricket Board",
+      "category": "government",
+      "priority": 72,
+      "kind": "Government office",
+      "x": -1550.16,
+      "z": 196.51
+    },
+    {
+      "name": "Pakistan Institute of Management",
+      "category": "government",
+      "priority": 72,
+      "kind": "Government office",
+      "x": 197.63,
+      "z": 397.45
+    },
+    {
+      "name": "Pearl One",
+      "category": "shopping",
+      "priority": 72,
+      "kind": "Mall",
+      "x": 184.02,
+      "z": -142.75
+    },
+    {
+      "name": "Primark Shopping Mall",
+      "category": "shopping",
+      "priority": 72,
+      "kind": "Mall",
+      "x": 73.36,
+      "z": -853.03
+    },
+    {
+      "name": "Primary School",
+      "category": "education",
+      "priority": 72,
+      "kind": "School",
+      "x": -1850.92,
+      "z": -2295.3
+    },
+    {
+      "name": "Punjab Text book Board",
+      "category": "government",
+      "priority": 72,
+      "kind": "Government office",
+      "x": -1183.97,
+      "z": 297.97
+    },
+    {
+      "name": "R&D youth connect Punjab",
+      "category": "government",
+      "priority": 72,
+      "kind": "Government office",
+      "x": -1778.04,
+      "z": 303.19
+    },
+    {
+      "name": "SKANS CA campus",
+      "category": "education",
+      "priority": 72,
+      "kind": "School",
+      "x": -1699.02,
+      "z": 1573.91
+    },
+    {
+      "name": "St. Marys High School Gulberg",
+      "category": "education",
+      "priority": 72,
+      "kind": "School",
+      "x": 335.96,
+      "z": -598.71
+    },
+    {
+      "name": "TEVTA Secretariat",
+      "category": "government",
+      "priority": 72,
+      "kind": "Government office",
+      "x": 309.42,
+      "z": -1757.25
+    },
+    {
+      "name": "TGS - The Global Store",
+      "category": "shopping",
+      "priority": 72,
+      "kind": "Department Store",
+      "x": 43.02,
+      "z": -717.26
+    },
+    {
+      "name": "Tenth Avenue Mall",
+      "category": "shopping",
+      "priority": 72,
+      "kind": "Mall",
+      "x": 202.72,
+      "z": -550.32
+    },
+    {
+      "name": "The City School",
+      "category": "education",
+      "priority": 72,
+      "kind": "School",
+      "x": -1996.32,
+      "z": 1119.64
+    },
+    {
+      "name": "The Lords International School System",
+      "category": "education",
+      "priority": 72,
+      "kind": "School",
+      "x": 238.89,
+      "z": 1003.54
+    },
+    {
+      "name": "The Right School",
+      "category": "education",
+      "priority": 72,
+      "kind": "School",
+      "x": -1696.03,
+      "z": 1150.72
+    },
+    {
+      "name": "Trafco House",
+      "category": "government",
+      "priority": 72,
+      "kind": "Government office",
+      "x": -968.41,
+      "z": -2079.23
+    },
+    {
+      "name": "UTILITY STORES",
+      "category": "shopping",
+      "priority": 72,
+      "kind": "Supermarket",
+      "x": -503.61,
+      "z": -1085.97
+    },
+    {
+      "name": "Wilson's Specialty Mall",
+      "category": "shopping",
+      "priority": 72,
+      "kind": "Mall",
+      "x": -238.89,
+      "z": -820.98
+    },
+    {
+      "name": "Xinhua Mall",
+      "category": "shopping",
+      "priority": 72,
+      "kind": "Mall",
+      "x": 374.17,
+      "z": 734.79
+    },
+    {
+      "name": "ZAKA Mall",
+      "category": "shopping",
+      "priority": 72,
+      "kind": "Mall",
+      "x": 34.22,
+      "z": -894.74
+    },
+    {
+      "name": "Zaka Mall",
+      "category": "shopping",
+      "priority": 72,
+      "kind": "Mall",
+      "x": 104.39,
+      "z": -29.42
+    },
+    {
+      "name": "col saeed office",
+      "category": "government",
+      "priority": 72,
+      "kind": "Government office",
+      "x": -270.06,
+      "z": -1096.55
     },
     {
       "name": "Abid Majeed Road (Featherston Road)",
       "category": "road",
       "priority": 69,
+      "kind": "Major road",
       "x": 1900.92,
       "z": -908.05
     },
@@ -269,6 +1614,7 @@
       "name": "Firozpur Road",
       "category": "road",
       "priority": 69,
+      "kind": "Major road",
       "x": -1397.37,
       "z": 2075.61
     },
@@ -276,6 +1622,7 @@
       "name": "Jail Road",
       "category": "road",
       "priority": 69,
+      "kind": "Major road",
       "x": 1159.4,
       "z": -1454.3
     },
@@ -283,6 +1630,7 @@
       "name": "Kalma Chowk Flyover",
       "category": "road",
       "priority": 69,
+      "kind": "Major road",
       "x": -1777.42,
       "z": 1056.09
     },
@@ -290,13 +1638,263 @@
       "name": "Sherpao Bridge",
       "category": "road",
       "priority": 69,
+      "kind": "Major road",
       "x": 992.21,
       "z": -1643.36
+    },
+    {
+      "name": "Best Western",
+      "category": "hotel",
+      "priority": 68,
+      "kind": "Hotel",
+      "x": -589.39,
+      "z": 237.75
+    },
+    {
+      "name": "Best Western Premier Hotel Gulberg Lahore",
+      "category": "hotel",
+      "priority": 68,
+      "kind": "Hotel",
+      "x": -68.96,
+      "z": 1194.46
+    },
+    {
+      "name": "British Hotel",
+      "category": "hotel",
+      "priority": 68,
+      "kind": "Hotel",
+      "x": 1198.13,
+      "z": 1410.2
+    },
+    {
+      "name": "Chancery",
+      "category": "hotel",
+      "priority": 68,
+      "kind": "Hotel",
+      "x": -84.68,
+      "z": 544.81
+    },
+    {
+      "name": "City View Hotel",
+      "category": "hotel",
+      "priority": 68,
+      "kind": "Hotel",
+      "x": -204.5,
+      "z": -1308.23
+    },
+    {
+      "name": "Express Hotel Lahore",
+      "category": "hotel",
+      "priority": 68,
+      "kind": "Hotel",
+      "x": 1083.58,
+      "z": 1405.3
+    },
+    {
+      "name": "Green Fort Hotel",
+      "category": "hotel",
+      "priority": 68,
+      "kind": "Hotel",
+      "x": 506.73,
+      "z": -588.33
+    },
+    {
+      "name": "Gulberg View Hotel",
+      "category": "hotel",
+      "priority": 68,
+      "kind": "Hotel",
+      "x": -377.52,
+      "z": -1050.28
+    },
+    {
+      "name": "Heritage Luxury Suites",
+      "category": "hotel",
+      "priority": 68,
+      "kind": "Hotel",
+      "x": -182.38,
+      "z": 527.88
+    },
+    {
+      "name": "Hotel 12J",
+      "category": "hotel",
+      "priority": 68,
+      "kind": "Hotel",
+      "x": -31.92,
+      "z": 1267.99
+    },
+    {
+      "name": "Hotel 7 Days",
+      "category": "hotel",
+      "priority": 68,
+      "kind": "Hotel",
+      "x": -342.63,
+      "z": -548.67
+    },
+    {
+      "name": "Hotel One",
+      "category": "hotel",
+      "priority": 68,
+      "kind": "Hotel",
+      "x": 423.31,
+      "z": 736.09
+    },
+    {
+      "name": "Hotel Tulip Inn",
+      "category": "hotel",
+      "priority": 68,
+      "kind": "Hotel",
+      "x": 299.85,
+      "z": -393.73
+    },
+    {
+      "name": "Lahore Continental Hotel",
+      "category": "hotel",
+      "priority": 68,
+      "kind": "Hotel",
+      "x": 1300.92,
+      "z": 1402.14
+    },
+    {
+      "name": "Lion Hotel Lahore",
+      "category": "hotel",
+      "priority": 68,
+      "kind": "Hotel",
+      "x": -1791.67,
+      "z": -308.22
+    },
+    {
+      "name": "Maisonette Hotel Liberty",
+      "category": "hotel",
+      "priority": 68,
+      "kind": "Hotel",
+      "x": -393.42,
+      "z": 539.94
+    },
+    {
+      "name": "Park View Hotel",
+      "category": "hotel",
+      "priority": 68,
+      "kind": "Hotel",
+      "x": 498.99,
+      "z": 160.33
+    },
+    {
+      "name": "Regency Inn Hotel",
+      "category": "hotel",
+      "priority": 68,
+      "kind": "Hotel",
+      "x": 636.0,
+      "z": -1790.46
+    },
+    {
+      "name": "Royaute Luxury Hotel",
+      "category": "hotel",
+      "priority": 68,
+      "kind": "Hotel",
+      "x": -97.12,
+      "z": -27.68
+    },
+    {
+      "name": "Safari Hotel",
+      "category": "hotel",
+      "priority": 68,
+      "kind": "Hotel",
+      "x": 456.07,
+      "z": 261.56
+    },
+    {
+      "name": "Savoey Hotel",
+      "category": "hotel",
+      "priority": 68,
+      "kind": "Hotel",
+      "x": 654.02,
+      "z": 1225.71
+    },
+    {
+      "name": "Smart Hotel",
+      "category": "hotel",
+      "priority": 68,
+      "kind": "Hotel",
+      "x": -672.68,
+      "z": 447.61
+    },
+    {
+      "name": "The Nishat Hotel",
+      "category": "hotel",
+      "priority": 68,
+      "kind": "Hotel",
+      "x": 559.72,
+      "z": 800.26
+    },
+    {
+      "name": "Colony",
+      "category": "government",
+      "priority": 66,
+      "kind": "Post Office",
+      "x": 979.8,
+      "z": -397.13
+    },
+    {
+      "name": "FedEx",
+      "category": "government",
+      "priority": 66,
+      "kind": "Post Office",
+      "x": 168.76,
+      "z": -792.91
+    },
+    {
+      "name": "Fccu basket ball court",
+      "category": "sports",
+      "priority": 64,
+      "kind": "Pitch",
+      "x": -1667.43,
+      "z": -985.89
+    },
+    {
+      "name": "LDA Sports Complex",
+      "category": "sports",
+      "priority": 64,
+      "kind": "Sports Centre",
+      "x": 821.0,
+      "z": 180.65
+    },
+    {
+      "name": "National Cricket Acaddemy",
+      "category": "sports",
+      "priority": 64,
+      "kind": "Sports Centre",
+      "x": -1396.52,
+      "z": -55.75
+    },
+    {
+      "name": "National Cricket Academy Ground",
+      "category": "sports",
+      "priority": 64,
+      "kind": "Pitch",
+      "x": -1323.75,
+      "z": 126.75
+    },
+    {
+      "name": "Tennis court, FCC",
+      "category": "sports",
+      "priority": 64,
+      "kind": "Pitch",
+      "x": -1503.61,
+      "z": -1201.68
+    },
+    {
+      "name": "Al-Hafeez Hieghts",
+      "category": "government",
+      "priority": 62,
+      "kind": "Community Centre",
+      "x": -492.77,
+      "z": -39.01
     },
     {
       "name": "Ali Zaib Road",
       "category": "road",
       "priority": 62,
+      "kind": "Major road",
       "x": -1106.87,
       "z": 890.53
     },
@@ -304,6 +1902,7 @@
       "name": "Ali Zeb Road",
       "category": "road",
       "priority": 62,
+      "kind": "Major road",
       "x": 1995.73,
       "z": 1411.44
     },
@@ -311,20 +1910,55 @@
       "name": "Aziz Bhatti Road",
       "category": "road",
       "priority": 62,
+      "kind": "Major road",
       "x": 1550.3,
       "z": -1799.25
+    },
+    {
+      "name": "Chalet Banquet Halls",
+      "category": "government",
+      "priority": 62,
+      "kind": "Community Centre",
+      "x": -1632.74,
+      "z": 1326.97
     },
     {
       "name": "College Road",
       "category": "road",
       "priority": 62,
+      "kind": "Major road",
       "x": 546.85,
       "z": -1191.95
+    },
+    {
+      "name": "Gourmet Central Marquee",
+      "category": "government",
+      "priority": 62,
+      "kind": "Community Centre",
+      "x": -1.56,
+      "z": -1059.87
+    },
+    {
+      "name": "Gourmet Marquee",
+      "category": "government",
+      "priority": 62,
+      "kind": "Community Centre",
+      "x": 348.62,
+      "z": 146.91
+    },
+    {
+      "name": "Gourmet Parklane Marquee",
+      "category": "government",
+      "priority": 62,
+      "kind": "Community Centre",
+      "x": -160.11,
+      "z": 171.0
     },
     {
       "name": "Gurumangat Road",
       "category": "road",
       "priority": 62,
+      "kind": "Major road",
       "x": 699.78,
       "z": -841.1
     },
@@ -332,6 +1966,7 @@
       "name": "Infantry Road",
       "category": "road",
       "priority": 62,
+      "kind": "Major road",
       "x": 1814.53,
       "z": -2056.7
     },
@@ -339,13 +1974,854 @@
       "name": "Jinnah Bridge",
       "category": "road",
       "priority": 62,
+      "kind": "Major road",
       "x": 813.81,
       "z": 1344.52
+    },
+    {
+      "name": "Khursheed Alam Road",
+      "category": "road",
+      "priority": 62,
+      "kind": "Major road",
+      "x": 1865.93,
+      "z": 817.44
+    },
+    {
+      "name": "Liberty Castle",
+      "category": "government",
+      "priority": 62,
+      "kind": "Community Centre",
+      "x": -682.24,
+      "z": 118.89
+    },
+    {
+      "name": "Liberty Roundabout",
+      "category": "road",
+      "priority": 62,
+      "kind": "Major road",
+      "x": -840.78,
+      "z": 386.7
+    },
+    {
+      "name": "Main Boulevard Garden Town",
+      "category": "road",
+      "priority": 62,
+      "kind": "Major road",
+      "x": -1363.9,
+      "z": 847.0
+    },
+    {
+      "name": "Main Boulevard Gulberg",
+      "category": "road",
+      "priority": 62,
+      "kind": "Major road",
+      "x": -456.42,
+      "z": -532.73
+    },
+    {
+      "name": "Mall Road",
+      "category": "road",
+      "priority": 62,
+      "kind": "Major road",
+      "x": 1114.46,
+      "z": -2125.05
+    },
+    {
+      "name": "Mini Market Roundabout",
+      "category": "road",
+      "priority": 62,
+      "kind": "Major road",
+      "x": 120.44,
+      "z": -743.91
+    },
+    {
+      "name": "Shah Jamal Road",
+      "category": "road",
+      "priority": 62,
+      "kind": "Major road",
+      "x": -1815.9,
+      "z": -1651.88
+    },
+    {
+      "name": "Shami Road (Sir Hugh Rose Road)",
+      "category": "road",
+      "priority": 62,
+      "kind": "Major road",
+      "x": 1752.24,
+      "z": -505.08
+    },
+    {
+      "name": "Zahoor Elahi Road",
+      "category": "road",
+      "priority": 62,
+      "kind": "Major road",
+      "x": -94.65,
+      "z": -750.5
+    },
+    {
+      "name": "Cavalry Dental Clinic",
+      "category": "healthcare",
+      "priority": 58,
+      "kind": "Dentist",
+      "x": 1115.0,
+      "z": 1345.44
+    },
+    {
+      "name": "Dr. Qazi and Associates",
+      "category": "healthcare",
+      "priority": 58,
+      "kind": "Dentist",
+      "x": -134.18,
+      "z": -507.86
+    },
+    {
+      "name": "Family Dental Solutions - Institute of Orthodontics & Dental Cosmetics.",
+      "category": "healthcare",
+      "priority": 58,
+      "kind": "Dentist",
+      "x": 56.51,
+      "z": -807.41
+    },
+    {
+      "name": "3 T",
+      "category": "hotel",
+      "priority": 56,
+      "kind": "Guest House",
+      "x": 439.48,
+      "z": -533.21
+    },
+    {
+      "name": "Baloch Hostel",
+      "category": "hotel",
+      "priority": 56,
+      "kind": "Hostel",
+      "x": -144.33,
+      "z": 1373.43
+    },
+    {
+      "name": "Academy Road",
+      "category": "road",
+      "priority": 55,
+      "kind": "Major road",
+      "x": 972.48,
+      "z": -397.57
+    },
+    {
+      "name": "Alauddin Road",
+      "category": "road",
+      "priority": 55,
+      "kind": "Major road",
+      "x": 1331.93,
+      "z": -1372.08
+    },
+    {
+      "name": "Avenue 1 Block B",
+      "category": "road",
+      "priority": 55,
+      "kind": "Major road",
+      "x": -1654.97,
+      "z": 2222.2
+    },
+    {
+      "name": "Ayesha Siddiqui Road",
+      "category": "road",
+      "priority": 55,
+      "kind": "Major road",
+      "x": -356.02,
+      "z": -2142.03
+    },
+    {
+      "name": "B/C Diagonal Road",
+      "category": "road",
+      "priority": 55,
+      "kind": "Major road",
+      "x": -1599.22,
+      "z": 1837.51
+    },
+    {
+      "name": "Gaddafi Stadium Roundabout",
+      "category": "road",
+      "priority": 55,
+      "kind": "Major road",
+      "x": -1063.56,
+      "z": 274.07
+    },
+    {
+      "name": "Gardee Road",
+      "category": "road",
+      "priority": 55,
+      "kind": "Major road",
+      "x": -751.52,
+      "z": -1714.85
+    },
+    {
+      "name": "CSH Pharmacy",
+      "category": "healthcare",
+      "priority": 54,
+      "kind": "Pharmacy",
+      "x": -357.48,
+      "z": -1073.07
+    },
+    {
+      "name": "AFOHS club",
+      "category": "food",
+      "priority": 52,
+      "kind": "Restaurant",
+      "x": 175.04,
+      "z": 2123.92
+    },
+    {
+      "name": "Arcadian Caf\u00e9",
+      "category": "food",
+      "priority": 52,
+      "kind": "Cafe",
+      "x": -40.13,
+      "z": -954.92
+    },
+    {
+      "name": "Bamboo Union",
+      "category": "food",
+      "priority": 52,
+      "kind": "Restaurant",
+      "x": -371.77,
+      "z": -549.63
+    },
+    {
+      "name": "Bar.B.Q. Tonight",
+      "category": "food",
+      "priority": 52,
+      "kind": "Restaurant",
+      "x": 529.67,
+      "z": 800.08
+    },
+    {
+      "name": "Bombay Chowpatty",
+      "category": "food",
+      "priority": 52,
+      "kind": "Restaurant",
+      "x": 11.64,
+      "z": 445.32
+    },
+    {
+      "name": "Bundu Khan",
+      "category": "food",
+      "priority": 52,
+      "kind": "Restaurant",
+      "x": 1356.18,
+      "z": -2232.9
+    },
+    {
+      "name": "Burger Corner",
+      "category": "food",
+      "priority": 52,
+      "kind": "Fast Food",
+      "x": 137.26,
+      "z": -807.29
+    },
+    {
+      "name": "Burger Hub",
+      "category": "food",
+      "priority": 52,
+      "kind": "Fast Food",
+      "x": -16.22,
+      "z": 597.18
+    },
+    {
+      "name": "Butlers",
+      "category": "food",
+      "priority": 52,
+      "kind": "Cafe",
+      "x": -47.45,
+      "z": 828.83
+    },
+    {
+      "name": "Butt Karahi",
+      "category": "food",
+      "priority": 52,
+      "kind": "Restaurant",
+      "x": -1647.63,
+      "z": 183.62
+    },
+    {
+      "name": "Cafe Aylanto",
+      "category": "food",
+      "priority": 52,
+      "kind": "Restaurant",
+      "x": 171.26,
+      "z": -312.12
+    },
+    {
+      "name": "Cafe Costa",
+      "category": "food",
+      "priority": 52,
+      "kind": "Cafe",
+      "x": 64.0,
+      "z": 764.89
+    },
+    {
+      "name": "Cafe Nataliya",
+      "category": "food",
+      "priority": 52,
+      "kind": "Cafe",
+      "x": 517.7,
+      "z": -1189.08
+    },
+    {
+      "name": "Cafe Page 102",
+      "category": "food",
+      "priority": 52,
+      "kind": "Cafe",
+      "x": 67.83,
+      "z": 424.81
+    },
+    {
+      "name": "Cafe Zauk",
+      "category": "food",
+      "priority": 52,
+      "kind": "Restaurant",
+      "x": 164.52,
+      "z": -701.55
+    },
+    {
+      "name": "Chaaye Khana",
+      "category": "food",
+      "priority": 52,
+      "kind": "Restaurant",
+      "x": 184.35,
+      "z": -155.42
+    },
+    {
+      "name": "Chaye Kada",
+      "category": "food",
+      "priority": 52,
+      "kind": "Cafe",
+      "x": 307.38,
+      "z": 786.36
+    },
+    {
+      "name": "China Town",
+      "category": "food",
+      "priority": 52,
+      "kind": "Restaurant",
+      "x": 617.27,
+      "z": 801.36
+    },
+    {
+      "name": "Coffee Tea & Company",
+      "category": "food",
+      "priority": 52,
+      "kind": "Cafe",
+      "x": 394.26,
+      "z": 782.56
+    },
+    {
+      "name": "Coko Bell",
+      "category": "food",
+      "priority": 52,
+      "kind": "Restaurant",
+      "x": -1503.88,
+      "z": 1699.67
+    },
+    {
+      "name": "Cosa Nostra",
+      "category": "food",
+      "priority": 52,
+      "kind": "Restaurant",
+      "x": 139.67,
+      "z": -1445.5
+    },
+    {
+      "name": "Dock 27",
+      "category": "food",
+      "priority": 52,
+      "kind": "Restaurant",
+      "x": 56.61,
+      "z": -515.04
+    },
+    {
+      "name": "Domino's",
+      "category": "food",
+      "priority": 52,
+      "kind": "Fast Food",
+      "x": 61.92,
+      "z": 600.88
+    },
+    {
+      "name": "Drip - Coffee Brewery & Bakery",
+      "category": "food",
+      "priority": 52,
+      "kind": "Cafe",
+      "x": 213.03,
+      "z": -1839.9
+    },
+    {
+      "name": "English Tea House",
+      "category": "food",
+      "priority": 52,
+      "kind": "Cafe",
+      "x": -108.75,
+      "z": -849.96
+    },
+    {
+      "name": "Fc university cafe",
+      "category": "food",
+      "priority": 52,
+      "kind": "Cafe",
+      "x": -1447.9,
+      "z": -627.38
+    },
+    {
+      "name": "Freddys Cafe",
+      "category": "food",
+      "priority": 52,
+      "kind": "Cafe",
+      "x": 1.0,
+      "z": 527.83
+    },
+    {
+      "name": "Ganache Cafe",
+      "category": "food",
+      "priority": 52,
+      "kind": "Restaurant",
+      "x": -341.44,
+      "z": -498.3
+    },
+    {
+      "name": "Gloria Jean's",
+      "category": "food",
+      "priority": 52,
+      "kind": "Cafe",
+      "x": 345.41,
+      "z": 730.06
+    },
+    {
+      "name": "Gloria Jean's",
+      "category": "food",
+      "priority": 52,
+      "kind": "Cafe",
+      "x": -401.21,
+      "z": -511.67
+    },
+    {
+      "name": "Grab Your Meal",
+      "category": "food",
+      "priority": 52,
+      "kind": "Restaurant",
+      "x": 25.51,
+      "z": -900.92
+    },
+    {
+      "name": "Hardee's",
+      "category": "food",
+      "priority": 52,
+      "kind": "Fast Food",
+      "x": 57.94,
+      "z": 502.82
+    },
+    {
+      "name": "Indulge",
+      "category": "food",
+      "priority": 52,
+      "kind": "Cafe",
+      "x": 117.64,
+      "z": -36.83
+    },
+    {
+      "name": "KFC",
+      "category": "food",
+      "priority": 52,
+      "kind": "Fast Food",
+      "x": -46.58,
+      "z": -1489.84
+    },
+    {
+      "name": "KFC ",
+      "category": "food",
+      "priority": 52,
+      "kind": "Fast Food",
+      "x": 1511.16,
+      "z": 1407.57
+    },
+    {
+      "name": "A block",
+      "category": "building",
+      "priority": 48,
+      "kind": "University",
+      "x": -1516.24,
+      "z": -1042.75
+    },
+    {
+      "name": "A.H. Kardar",
+      "category": "building",
+      "priority": 48,
+      "kind": "Grandstand",
+      "x": -1656.22,
+      "z": 128.85
+    },
+    {
+      "name": "ASKARI CORPORATE TOWER",
+      "category": "building",
+      "priority": 48,
+      "kind": "Commercial",
+      "x": -752.42,
+      "z": 225.84
+    },
+    {
+      "name": "Abdul Qadir",
+      "category": "building",
+      "priority": 48,
+      "kind": "Grandstand",
+      "x": -1670.6,
+      "z": 22.41
+    },
+    {
+      "name": "Agha Noor",
+      "category": "building",
+      "priority": 48,
+      "kind": "Commercial",
+      "x": 147.94,
+      "z": -479.75
+    },
+    {
+      "name": "Ahad Tower",
+      "category": "building",
+      "priority": 48,
+      "kind": "Commercial",
+      "x": -1854.21,
+      "z": 1033.35
+    },
+    {
+      "name": "Aligarh Public School",
+      "category": "building",
+      "priority": 48,
+      "kind": "School",
+      "x": -53.9,
+      "z": 146.92
+    },
+    {
+      "name": "Almas Tower",
+      "category": "building",
+      "priority": 48,
+      "kind": "Commercial",
+      "x": 121.66,
+      "z": -627.89
+    },
+    {
+      "name": "Alvi Building",
+      "category": "building",
+      "priority": 48,
+      "kind": "Apartments",
+      "x": -753.7,
+      "z": -1229.95
+    },
+    {
+      "name": "Armacost Building",
+      "category": "building",
+      "priority": 48,
+      "kind": "University",
+      "x": -1522.24,
+      "z": -762.16
+    },
+    {
+      "name": "Aspire College",
+      "category": "building",
+      "priority": 48,
+      "kind": "College",
+      "x": -468.12,
+      "z": 38.57
+    },
+    {
+      "name": "B block",
+      "category": "building",
+      "priority": 48,
+      "kind": "University",
+      "x": -1431.84,
+      "z": -1060.23
+    },
+    {
+      "name": "Bank Alfalah Islamic",
+      "category": "building",
+      "priority": 48,
+      "kind": "Bank",
+      "x": 144.99,
+      "z": -1582.8
+    },
+    {
+      "name": "Bata City",
+      "category": "building",
+      "priority": 48,
+      "kind": "Commercial",
+      "x": 162.33,
+      "z": -413.14
+    },
+    {
+      "name": "Beechtree",
+      "category": "building",
+      "priority": 48,
+      "kind": "Commercial",
+      "x": -103.11,
+      "z": -738.18
+    },
+    {
+      "name": "CarFirst Purchase Center - Shell Mini Market Lahore",
+      "category": "building",
+      "priority": 48,
+      "kind": "Commercial",
+      "x": 16.8,
+      "z": -714.76
+    },
+    {
+      "name": "Century Tower",
+      "category": "building",
+      "priority": 48,
+      "kind": "Commercial",
+      "x": -1717.88,
+      "z": 981.02
+    },
+    {
+      "name": "D Block",
+      "category": "building",
+      "priority": 48,
+      "kind": "University",
+      "x": -1434.64,
+      "z": -975.48
+    },
+    {
+      "name": "Elahi Block Fcc",
+      "category": "building",
+      "priority": 48,
+      "kind": "College",
+      "x": -1713.11,
+      "z": -909.82
+    },
+    {
+      "name": "Far End, Media Centre",
+      "category": "building",
+      "priority": 48,
+      "kind": "Grandstand",
+      "x": -1590.05,
+      "z": -50.47
+    },
+    {
+      "name": "Game Torque Studio",
+      "category": "building",
+      "priority": 48,
+      "kind": "Commercial",
+      "x": 263.69,
+      "z": -1945.98
+    },
+    {
+      "name": "Gate 1, 2",
+      "category": "building",
+      "priority": 48,
+      "kind": "Roof",
+      "x": -1602.46,
+      "z": 196.15
+    },
+    {
+      "name": "Gate 11, 12",
+      "category": "building",
+      "priority": 48,
+      "kind": "Roof",
+      "x": -1452.26,
+      "z": -3.91
+    },
+    {
+      "name": "Gate 13, 14",
+      "category": "building",
+      "priority": 48,
+      "kind": "Roof",
+      "x": -1437.43,
+      "z": 89.59
+    },
+    {
+      "name": "Gate 15, 16",
+      "category": "building",
+      "priority": 48,
+      "kind": "Roof",
+      "x": -1501.06,
+      "z": 178.48
+    },
+    {
+      "name": "Gate 7, 8",
+      "category": "building",
+      "priority": 48,
+      "kind": "Roof",
+      "x": -1636.08,
+      "z": -59.09
+    },
+    {
+      "name": "Gate 9, 10",
+      "category": "building",
+      "priority": 48,
+      "kind": "Roof",
+      "x": -1546.41,
+      "z": -69.27
+    },
+    {
+      "name": "Govt Central Model High School",
+      "category": "building",
+      "priority": 48,
+      "kind": "School",
+      "x": -105.95,
+      "z": 187.47
+    },
+    {
+      "name": "Hijaz Hospital",
+      "category": "building",
+      "priority": 48,
+      "kind": "Hospital",
+      "x": -409.5,
+      "z": -133.61
+    },
+    {
+      "name": "Hope Tower",
+      "category": "building",
+      "priority": 48,
+      "kind": "Dormitory",
+      "x": -1749.4,
+      "z": -1049.33
+    },
+    {
+      "name": "IELTS with Laique Lodhi, Skill Glow International",
+      "category": "building",
+      "priority": 48,
+      "kind": "School",
+      "x": 1486.93,
+      "z": 1420.73
+    },
+    {
+      "name": "Imperium Tower",
+      "category": "building",
+      "priority": 48,
+      "kind": "Commercial",
+      "x": 383.01,
+      "z": -1852.52
+    },
+    {
+      "name": "Khaadi",
+      "category": "building",
+      "priority": 48,
+      "kind": "Commercial",
+      "x": 107.03,
+      "z": -723.0
+    },
+    {
+      "name": "Lahore Chatkhara",
+      "category": "building",
+      "priority": 48,
+      "kind": "Commercial",
+      "x": 153.41,
+      "z": -809.12
+    },
+    {
+      "name": "Lahore Schoolof Economics City Campus",
+      "category": "building",
+      "priority": 48,
+      "kind": "School",
+      "x": -274.54,
+      "z": 468.08
+    },
+    {
+      "name": "Lotus Furniture",
+      "category": "building",
+      "priority": 48,
+      "kind": "Commercial",
+      "x": 229.13,
+      "z": -430.16
+    },
+    {
+      "name": "Main Falcon Mosque",
+      "category": "building",
+      "priority": 48,
+      "kind": "Mosque",
+      "x": -36.3,
+      "z": 2148.03
+    },
+    {
+      "name": "Main Pavillion",
+      "category": "building",
+      "priority": 48,
+      "kind": "Pavilion",
+      "x": -1555.5,
+      "z": 169.0
+    },
+    {
+      "name": "Medical Center",
+      "category": "building",
+      "priority": 48,
+      "kind": "Commercial",
+      "x": -135.17,
+      "z": -509.36
+    },
+    {
+      "name": "National Grammar School",
+      "category": "building",
+      "priority": 48,
+      "kind": "School",
+      "x": -513.42,
+      "z": 127.23
+    },
+    {
+      "name": "Natioonal Furnishers",
+      "category": "building",
+      "priority": 48,
+      "kind": "Commercial",
+      "x": 85.17,
+      "z": -819.12
+    },
+    {
+      "name": "Nishat Hotel",
+      "category": "building",
+      "priority": 48,
+      "kind": "Hotel",
+      "x": 562.29,
+      "z": 813.03
+    },
+    {
+      "name": "Plaza 100",
+      "category": "building",
+      "priority": 48,
+      "kind": "Office",
+      "x": 77.12,
+      "z": 473.08
+    },
+    {
+      "name": "Punjab Safe Cities Authority Lahore",
+      "category": "building",
+      "priority": 48,
+      "kind": "Office",
+      "x": 793.03,
+      "z": -1938.39
+    },
+    {
+      "name": "Saeed Anwer",
+      "category": "building",
+      "priority": 48,
+      "kind": "Grandstand",
+      "x": -1521.91,
+      "z": -29.41
     }
   ],
+  "labelCounts": {
+    "building": 45,
+    "district": 25,
+    "education": 32,
+    "food": 35,
+    "government": 22,
+    "healthcare": 21,
+    "hotel": 25,
+    "landmark": 10,
+    "park": 18,
+    "road": 30,
+    "shopping": 45,
+    "sports": 8,
+    "transit": 2,
+    "worship": 21
+  },
   "provenance": {
     "overtureRelease": "2026-08-19.0",
-    "osmTimestamp": "2026-08-25T19:16:03Z",
+    "osmTimestamp": "2026-08-27T17:37:21Z",
     "buildingThemeLicense": "ODbL-1.0",
     "buildingSources": [
       "OpenStreetMap contributors",

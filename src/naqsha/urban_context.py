@@ -121,30 +121,84 @@ def _line_class(tags: dict[str, Any]) -> int | None:
     return HIGHWAY_CLASS.get(tags.get("highway"))
 
 
-def _label_category(tags: dict[str, Any]) -> tuple[str, int] | None:
+def _label_category(tags: dict[str, Any]) -> tuple[str, int, str] | None:
     place = tags.get("place")
     if place in {"city", "town"}:
-        return "district", 110
+        return "district", 120, "City"
     if place == "suburb":
-        return "district", 100
+        return "district", 108, "District"
     if place in {"neighbourhood", "quarter"}:
-        return "district", 88
+        return "district", 96, "Neighbourhood"
+    if place in {"locality", "village", "hamlet"}:
+        return "district", 84, "Locality"
     if place == "square":
-        return "landmark", 82
+        return "landmark", 82, "Square"
     if tags.get("railway") == "station":
-        return "station", 94
-    if tags.get("railway") == "stop":
-        return "station", 80
+        return "transit", 100, "Railway station"
+    if tags.get("railway") in {"halt", "stop"}:
+        return "transit", 78, "Rail stop"
+    if tags.get("amenity") == "bus_station" or tags.get("public_transport") == "station":
+        return "transit", 88, "Transit station"
     if tags.get("tourism") == "museum":
-        return "landmark", 90
+        return "landmark", 96, "Museum"
     if tags.get("historic") in {"monument", "memorial", "tomb"}:
-        return "landmark", 84
-    if tags.get("tourism") == "attraction":
-        return "landmark", 75
-    if tags.get("amenity") in {"university", "college"}:
-        return "civic", 86
-    if tags.get("amenity") == "hospital":
-        return "civic", 78
+        return "landmark", 90, str(tags["historic"]).replace("_", " ").title()
+    if tags.get("tourism") in {"attraction", "gallery", "viewpoint"}:
+        return "landmark", 80, str(tags["tourism"]).replace("_", " ").title()
+    amenity = tags.get("amenity")
+    if amenity == "university":
+        return "education", 94, "University"
+    if amenity == "college":
+        return "education", 88, "College"
+    if amenity in {"school", "library"}:
+        return "education", 72 if amenity == "school" else 78, amenity.title()
+    if amenity in {"kindergarten", "training"}:
+        return "education", 56, str(amenity).title()
+    if amenity == "hospital":
+        return "healthcare", 94, "Hospital"
+    if amenity in {"clinic", "doctors", "pharmacy", "dentist"}:
+        priority = {"clinic": 76, "doctors": 64, "pharmacy": 54, "dentist": 58}[amenity]
+        return "healthcare", priority, str(amenity).title()
+    if amenity == "place_of_worship":
+        religion = str(tags.get("religion") or "Place of worship").title()
+        return "worship", 76, religion
+    government_priorities = {
+        "townhall": 90,
+        "courthouse": 88,
+        "police": 78,
+        "fire_station": 76,
+        "post_office": 66,
+        "community_centre": 62,
+    }
+    if amenity in government_priorities:
+        return "government", government_priorities[amenity], str(amenity).replace("_", " ").title()
+    if amenity in {"marketplace", "bank"}:
+        return "shopping", 78 if amenity == "marketplace" else 58, str(amenity).title()
+    if amenity in {"restaurant", "cafe", "fast_food", "food_court"}:
+        return "food", 52, str(amenity).replace("_", " ").title()
+    tourism = tags.get("tourism")
+    if tourism in {"hotel", "guest_house", "hostel", "motel"}:
+        return "hotel", 68 if tourism == "hotel" else 56, str(tourism).replace("_", " ").title()
+    leisure = tags.get("leisure")
+    if leisure in {"park", "garden", "nature_reserve", "playground"}:
+        return "park", 76 if leisure in {"park", "nature_reserve"} else 62, str(leisure).replace("_", " ").title()
+    if leisure in {"stadium", "sports_centre", "fitness_centre", "pitch"}:
+        priority = 88 if leisure == "stadium" else 64
+        return "sports", priority, str(leisure).replace("_", " ").title()
+    if tags.get("shop"):
+        shop = str(tags["shop"])
+        priority = 72 if shop in {"mall", "department_store", "supermarket"} else 46
+        return "shopping", priority, shop.replace("_", " ").title()
+    if tags.get("office") == "government":
+        return "government", 72, "Government office"
+    if tags.get("office"):
+        return "building", 44, "Office"
+    if tags.get("aeroway") in {"terminal", "aerodrome"}:
+        return "transit", 92, str(tags["aeroway"]).title()
+    if tags.get("man_made") in {"tower", "water_tower"}:
+        return "landmark", 62, str(tags["man_made"]).replace("_", " ").title()
+    if tags.get("building") and tags.get("building") not in {"yes", "house", "residential"}:
+        return "building", 48, str(tags["building"]).replace("_", " ").title()
     return None
 
 
@@ -152,17 +206,40 @@ def _local_xy(x: float, y: float, origin: tuple[float, float]) -> tuple[float, f
     return x - origin[0], origin[1] - y
 
 
-def _declutter_labels(labels: list[dict[str, Any]], minimum_distance: float = 150) -> list[dict]:
+def _declutter_labels(labels: list[dict[str, Any]], minimum_distance: float = 45) -> list[dict]:
     selected: list[dict[str, Any]] = []
-    seen: set[str] = set()
+    seen: set[tuple[str, int, int]] = set()
     category_counts: Counter[str] = Counter()
-    category_limits = {"district": 14, "road": 14, "civic": 8, "landmark": 8, "station": 5}
+    category_limits = {
+        "district": 25,
+        "road": 30,
+        "transit": 20,
+        "landmark": 30,
+        "education": 40,
+        "healthcare": 35,
+        "worship": 35,
+        "government": 30,
+        "shopping": 45,
+        "food": 35,
+        "hotel": 25,
+        "park": 30,
+        "sports": 25,
+        "building": 45,
+    }
     for label in sorted(labels, key=lambda item: (-item["priority"], item["name"])):
-        key = label["name"].casefold()
+        key = (
+            label["name"].casefold(),
+            round(label["x"] / 200),
+            round(label["z"] / 200),
+        )
         category = label["category"]
         if key in seen or category_counts[category] >= category_limits.get(category, 5):
             continue
         if any(
+            label["category"] == other["category"]
+            and label["priority"] < 85
+            and other["priority"] < 85
+            and
             (label["x"] - other["x"]) ** 2 + (label["z"] - other["z"]) ** 2
             < minimum_distance**2
             for other in selected
@@ -171,9 +248,27 @@ def _declutter_labels(labels: list[dict[str, Any]], minimum_distance: float = 15
         selected.append(label)
         seen.add(key)
         category_counts[category] += 1
-        if len(selected) == sum(category_limits.values()):
-            break
     return selected
+
+
+def _element_point(element: dict[str, Any], projector: Transformer) -> Point | None:
+    if element.get("type") == "node" and "lon" in element and "lat" in element:
+        x, y = projector.transform(element["lon"], element["lat"])
+        return Point(x, y)
+    center = element.get("center")
+    if center and "lon" in center and "lat" in center:
+        x, y = projector.transform(center["lon"], center["lat"])
+        return Point(x, y)
+    coordinates = [
+        projector.transform(point["lon"], point["lat"])
+        for point in element.get("geometry", [])
+        if "lon" in point and "lat" in point
+    ]
+    if len(coordinates) >= 4 and coordinates[0] == coordinates[-1]:
+        return Polygon(coordinates).representative_point()
+    if len(coordinates) >= 2:
+        return LineString(coordinates).interpolate(0.5, normalized=True)
+    return None
 
 
 def _overture_release(buildings_path: Path) -> str:
@@ -236,21 +331,24 @@ def export_urban_context(
     named_roads: set[str] = set()
     for element in osm.get("elements", []):
         tags = element.get("tags") or {}
-        if element.get("type") == "node" and tags.get("name"):
+        display_name = tags.get("name:en") or tags.get("name")
+        if display_name:
             category = _label_category(tags)
             if category:
-                x, y = projector.transform(element["lon"], element["lat"])
-                if clip.contains(Point(x, y)):
-                    local_x, local_z = _local_xy(x, y, origin)
+                point = _element_point(element, projector)
+                if point and clip.covers(point):
+                    local_x, local_z = _local_xy(point.x, point.y, origin)
                     label_candidates.append(
                         {
-                            "name": tags.get("name:en") or tags["name"],
+                            "name": str(display_name),
                             "category": category[0],
                             "priority": category[1],
+                            "kind": category[2],
                             "x": round(local_x, 2),
                             "z": round(local_z, 2),
                         }
                     )
+        if element.get("type") == "node":
             continue
         if element.get("type") != "way" or len(element.get("geometry", [])) < 2:
             continue
@@ -280,6 +378,7 @@ def export_urban_context(
                     "name": name,
                     "category": "road",
                     "priority": 76 - class_id * 7,
+                    "kind": "Major road",
                     "x": round(local_x, 2),
                     "z": round(local_z, 2),
                 }
@@ -299,8 +398,9 @@ def export_urban_context(
     )
 
     measured_count = sum(measured_height)
+    selected_labels = _declutter_labels(label_candidates)
     payload = {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "crs": scenario["grid"]["crs"],
         "origin": {"easting": origin[0], "northing": origin[1]},
         "buildings": {
@@ -322,7 +422,8 @@ def export_urban_context(
             "nameFile": "network.names.json",
             "classes": LINE_CLASSES,
         },
-        "labels": _declutter_labels(label_candidates),
+        "labels": selected_labels,
+        "labelCounts": dict(sorted(Counter(label["category"] for label in selected_labels).items())),
         "provenance": {
             "overtureRelease": _overture_release(buildings_path),
             "osmTimestamp": osm.get("osm3s", {}).get("timestamp_osm_base"),

@@ -131,7 +131,7 @@
     "peakAgreementFile": "road-impact-peak-agreement.u8",
     "lengthFile": "road-impact-length.f32",
     "contextId": "central-lahore",
-    "lineCount": 3914,
+    "lineCount": 3918,
     "frameCount": 25,
     "depthScaleMetres": 0.001,
     "nodataDepth": 65535,
@@ -148,9 +148,9 @@
       6
     ],
     "peakSummary": {
-      "roadLengthOver10cmKm": 183.44517517089844,
+      "roadLengthOver10cmKm": 183.47055053710938,
       "roadLengthOver30cmKm": 84.46466827392578,
-      "mappedRoadLengthKm": 431.18927001953125
+      "mappedRoadLengthKm": 431.2208251953125
     },
     "warning": "Screening exposure sampled from a terrain-uncertain 28.66 m grid. It is not a road closure or safe-routing determination."
   }
