@@ -123,9 +123,8 @@ Use these as Devpost technology tags:
 
 ## Links
 
-- Demo: `[DEPLOYED_DEMO_URL]`
-- Source: `[GITHUB_REPOSITORY_URL]`
-- Video: `[YOUTUBE_OR_LOOM_URL]`
+- Demo: `[https://naqsha.brutefloat.com]`
+- Source: `[https://github.com/aybeedee/naqsha]`
 
 ## 60-second demo narration
 
@@ -164,15 +163,3 @@ Upload-ready images are available at:
 
 - [`devpost-assets/central-lahore.png`](devpost-assets/central-lahore.png)
 - [`devpost-assets/gulberg-liberty.png`](devpost-assets/gulberg-liberty.png)
-
-## Final 10-minute submission checklist
-
-- [ ] Replace the three link placeholders above.
-- [ ] Add team member names and roles.
-- [ ] Select relevant tracks/categories from the hackathon.
-- [ ] Upload a central-Lahore hero image first.
-- [ ] Upload a Gulberg image and an uncertainty/agreement image.
-- [ ] Record the 60–90 second demo; narration can be imperfect, but show the product immediately.
-- [ ] Confirm the demo URL works in an incognito window.
-- [ ] Mention that depths are experimental screening outputs, not public-safety guidance.
-- [ ] Submit before polishing anything else.
