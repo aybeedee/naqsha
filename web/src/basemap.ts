@@ -23,10 +23,10 @@ export interface TileCoverage {
 
 function worldPixel(longitude: number, latitude: number, zoom: number): PixelPoint {
   const scale = TILE_SIZE * 2 ** zoom
-  const latitudeRadians = latitude * Math.PI / 180
+  const latitudeRadians = (latitude * Math.PI) / 180
   return {
-    x: (longitude + 180) / 360 * scale,
-    y: (1 - Math.asinh(Math.tan(latitudeRadians)) / Math.PI) / 2 * scale,
+    x: ((longitude + 180) / 360) * scale,
+    y: ((1 - Math.asinh(Math.tan(latitudeRadians)) / Math.PI) / 2) * scale,
   }
 }
 
@@ -53,14 +53,16 @@ export function tileCoverage(bounds: number[], zoom = 15): TileCoverage {
 }
 
 function tileUrl(template: string, zoom: number, x: number, y: number): string {
-  return template
-    .replace('{z}', String(zoom))
-    .replace('{x}', String(x))
-    .replace('{y}', String(y))
+  return template.replace('{z}', String(zoom)).replace('{x}', String(x)).replace('{y}', String(y))
 }
 
-async function loadTile(url: string): Promise<ImageBitmap> {
-  const response = await fetch(url, { credentials: 'omit', mode: 'cors' })
+async function loadTile(url: string, signal?: AbortSignal): Promise<ImageBitmap> {
+  const timeout = AbortSignal.timeout(15000)
+  const response = await fetch(url, {
+    credentials: 'omit',
+    mode: 'cors',
+    signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
+  })
   if (!response.ok) throw new Error(`Basemap tile failed: ${response.status}`)
   return createImageBitmap(await response.blob())
 }
@@ -69,6 +71,7 @@ export async function loadOsmBasemapTexture(
   bounds: number[],
   zoom = 15,
   template = import.meta.env.VITE_OSM_TILE_URL || DEFAULT_TILE_TEMPLATE,
+  signal?: AbortSignal,
 ): Promise<THREE.CanvasTexture> {
   const coverage = tileCoverage(bounds, zoom)
   // This loader is intentionally bounded to the one visible AOI and one zoom
@@ -84,7 +87,7 @@ export async function loadOsmBasemapTexture(
   for (let x = coverage.minTileX; x <= coverage.maxTileX; x += 1) {
     for (let y = coverage.minTileY; y <= coverage.maxTileY; y += 1) {
       requests.push(
-        loadTile(tileUrl(template, zoom, x, y)).then((tile) => {
+        loadTile(tileUrl(template, zoom, x, y), signal).then((tile) => {
           drawing.drawImage(
             tile,
             x * TILE_SIZE - coverage.westPixel,
@@ -96,8 +99,6 @@ export async function loadOsmBasemapTexture(
     }
   }
   await Promise.all(requests)
-  drawing.fillStyle = 'rgba(5, 21, 26, 0.18)'
-  drawing.fillRect(0, 0, canvas.width, canvas.height)
   const texture = new THREE.CanvasTexture(canvas)
   texture.colorSpace = THREE.SRGBColorSpace
   texture.minFilter = THREE.LinearMipmapLinearFilter

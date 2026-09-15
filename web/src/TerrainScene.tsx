@@ -3,10 +3,12 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { loadOsmBasemapTexture } from './basemap'
 import { buildAgreementGeometry, buildTerrainGeometry, buildWaterGeometry } from './geometry'
-import type { Dimension, ScenarioData, UrbanContextData, UrbanLabel, ViewId } from './types'
 import { buildBuildingGeometry, buildNetworkGeometry, elevationAt } from './urbanGeometry'
+import type { Dimension, ScenarioData, UrbanContextData, UrbanLabel, ViewId } from './types'
+import type { MapPlace } from './analysis'
+import type { MapAction } from './Explorer'
 
-interface TerrainSceneProps {
+interface Props {
   data: ScenarioData
   displayDepth: Float32Array
   context: UrbanContextData
@@ -23,466 +25,701 @@ interface TerrainSceneProps {
   roadImpactDepth?: Uint16Array
   roadImpactAgreement?: Uint8Array
   showLabels: boolean
-  resetNonce: number
+  action: MapAction
+  focus: MapPlace | null
+  selected: MapPlace | null
+  onSelect: (point: { x: number; z: number }) => void
 }
-
+type GroupName = 'terrain' | 'water' | 'buildings' | 'network' | 'impacts' | 'labels' | 'selection'
 interface SceneState {
   scene: THREE.Scene
   camera: THREE.PerspectiveCamera
   renderer: THREE.WebGLRenderer
   controls: OrbitControls
-  terrainModel: THREE.Group
-  waterModel: THREE.Group
-  contextModel: THREE.Group
-  resizeObserver: ResizeObserver
+  groups: Record<GroupName, THREE.Group>
   frame: number
+  invalidate: () => void
 }
 
-const LABEL_STYLES: Record<UrbanLabel['category'], { accent: string; marker: string }> = {
-  district: { accent: '#43d5c5', marker: '◆' },
-  road: { accent: '#d6b879', marker: '━' },
-  transit: { accent: '#ed9c67', marker: 'T' },
-  landmark: { accent: '#e8c45f', marker: '★' },
-  education: { accent: '#86bfe0', marker: 'E' },
-  healthcare: { accent: '#ed7770', marker: '+' },
-  worship: { accent: '#bba8dc', marker: 'W' },
-  government: { accent: '#aabbb8', marker: 'G' },
-  shopping: { accent: '#dc91c8', marker: 'S' },
-  food: { accent: '#e7a766', marker: 'F' },
-  hotel: { accent: '#a2ace1', marker: 'H' },
-  park: { accent: '#75bc83', marker: 'P' },
-  sports: { accent: '#74c5a7', marker: '●' },
-  building: { accent: '#9eb2ae', marker: 'B' },
-}
-
-function labelMaximumDistance(priority: number): number {
-  if (priority >= 100) return 18000
-  if (priority >= 88) return 12000
-  if (priority >= 76) return 8400
-  if (priority >= 64) return 5700
-  if (priority >= 52) return 3800
-  return 2400
-}
-
-function resetCamera(state: SceneState, data: ScenarioData, dimension: Dimension): void {
-  const span = Math.max(data.metadata.grid.extentWidthMetres, data.metadata.grid.extentHeightMetres)
-  if (dimension === '2d') {
-    state.camera.up.set(0, 0, -1)
-    state.camera.position.set(0, span * 1.85, 0.01)
-    state.controls.target.set(0, 0, 0)
-    state.controls.enableRotate = false
-  } else {
-    state.camera.up.set(0, 1, 0)
-    state.camera.position.set(span * 0.78, span * 0.64, span * 0.9)
-    state.controls.target.set(0, 60, 0)
-    state.controls.enableRotate = true
-  }
-  state.camera.lookAt(state.controls.target)
-  state.controls.update()
-}
-
-function disposeMaterial(material: THREE.Material, disposeMap = true): void {
-  const mapped = material as THREE.Material & { map?: THREE.Texture | null }
-  if (disposeMap) mapped.map?.dispose()
-  material.dispose()
-}
-
-function disposeGroup(group: THREE.Group, disposeMaps = true): void {
+function disposeGroup(group: THREE.Group): void {
   for (const child of [...group.children]) {
     group.remove(child)
-    if ('geometry' in child && child.geometry instanceof THREE.BufferGeometry) {
+    if ('geometry' in child && child.geometry instanceof THREE.BufferGeometry)
       child.geometry.dispose()
-    }
     if ('material' in child) {
       const material = child.material as THREE.Material | THREE.Material[]
-      const materials = Array.isArray(material) ? material : [material]
-      materials.forEach((material) => disposeMaterial(material, disposeMaps))
+      for (const item of Array.isArray(material) ? material : [material]) {
+        // The basemap is shared with the React texture lifecycle, not owned by a mesh.
+        if (child instanceof THREE.Sprite)
+          item instanceof THREE.SpriteMaterial && item.map?.dispose()
+        item.dispose()
+      }
     }
   }
 }
 
-function createLabelSprite(label: UrbanLabel): THREE.Sprite {
+function resetCamera(state: SceneState, data: ScenarioData, dimension: Dimension) {
+  const { camera, controls } = state
+  const { extentWidthMetres: width, extentHeightMetres: height } = data.metadata.grid
+  const fit =
+    Math.max(width / camera.aspect, height * (dimension === '2d' ? 1 : 0.82)) /
+    (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)))
+  const distance = Math.min(fit * 1.15, 20000)
+  controls.target.set(0, 0, 0)
+  if (dimension === '2d') {
+    controls.screenSpacePanning = true
+    camera.up.set(0, 0, -1)
+    camera.position.set(0, distance, 0.01)
+    controls.enableRotate = false
+    controls.mouseButtons.LEFT = THREE.MOUSE.PAN
+    controls.touches.ONE = THREE.TOUCH.PAN
+  } else {
+    controls.screenSpacePanning = false
+    camera.up.set(0, 1, 0)
+    camera.position.copy(new THREE.Vector3(0.22, 0.92, 0.7).normalize().multiplyScalar(distance))
+    controls.enableRotate = true
+    controls.mouseButtons.LEFT = THREE.MOUSE.ROTATE
+    controls.touches.ONE = THREE.TOUCH.ROTATE
+  }
+  controls.touches.TWO = THREE.TOUCH.DOLLY_PAN
+  camera.lookAt(controls.target)
+  controls.update()
+  state.invalidate()
+}
+
+const labelColors: Partial<Record<UrbanLabel['category'], string>> = {
+  district: '#294b3e',
+  road: '#655c49',
+  healthcare: '#9c554c',
+  park: '#467850',
+  worship: '#7f6689',
+  education: '#466e88',
+  shopping: '#855d75',
+  transit: '#84683e',
+}
+function createLabel(label: UrbanLabel): THREE.Sprite {
+  const district = label.category === 'district'
   const canvas = document.createElement('canvas')
-  canvas.width = 512
-  canvas.height = 128
   const drawing = canvas.getContext('2d')!
-  const style = LABEL_STYLES[label.category]
-  drawing.fillStyle = label.category === 'district'
-    ? 'rgba(5, 18, 24, .78)'
-    : 'rgba(5, 18, 24, .9)'
-  drawing.beginPath()
-  drawing.roundRect(2, 2, 508, 124, 13)
-  drawing.fill()
-  drawing.strokeStyle = style.accent
-  drawing.lineWidth = label.category === 'district' ? 4 : 2
-  drawing.stroke()
-  drawing.fillStyle = style.accent
-  drawing.beginPath()
-  drawing.arc(38, 64, 25, 0, Math.PI * 2)
-  drawing.fill()
-  drawing.fillStyle = '#07141b'
-  drawing.font = '700 25px sans-serif'
+  const font = `${district ? 650 : 550} ${district ? 34 : 30}px -apple-system, BlinkMacSystemFont, sans-serif`
+  drawing.font = font
+  const text = label.name.length > 42 ? `${label.name.slice(0, 40)}…` : label.name
+  canvas.width = Math.ceil(Math.min(drawing.measureText(text).width, 600)) + 26
+  canvas.height = 52
+  drawing.font = font
   drawing.textAlign = 'center'
   drawing.textBaseline = 'middle'
-  drawing.fillText(style.marker, 38, 65)
-  drawing.fillStyle = '#edf3ee'
-  drawing.font = label.category === 'district' ? '650 57px sans-serif' : '600 45px sans-serif'
-  drawing.textAlign = 'left'
-  drawing.textBaseline = 'middle'
-  const text = label.name.length > 28 ? `${label.name.slice(0, 26)}…` : label.name
-  drawing.fillText(text, 76, label.category === 'district' || label.category === 'road' ? 64 : 47)
-  if (label.category !== 'district' && label.category !== 'road') {
-    drawing.fillStyle = '#8da5a5'
-    drawing.font = '500 28px sans-serif'
-    drawing.fillText(label.kind, 76, 92)
-  }
+  drawing.lineJoin = 'round'
+  drawing.strokeStyle = '#fffffff0'
+  drawing.lineWidth = 7
+  drawing.strokeText(text, canvas.width / 2, 27, canvas.width - 20)
+  drawing.fillStyle = labelColors[label.category] ?? '#526653'
+  drawing.fillText(text, canvas.width / 2, 27, canvas.width - 20)
   const texture = new THREE.CanvasTexture(canvas)
   texture.colorSpace = THREE.SRGBColorSpace
-  const material = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false })
-  const sprite = new THREE.Sprite(material)
-  const width = label.category === 'district' ? 480 : label.category === 'road' ? 430 : 400
-  sprite.scale.set(width, width * 128 / 512, 1)
-  sprite.userData.baseLabelWidth = width
-  sprite.userData.labelPriority = label.priority
-  sprite.renderOrder = 10
+  const sprite = new THREE.Sprite(
+    new THREE.SpriteMaterial({
+      map: texture,
+      transparent: true,
+      depthTest: false,
+      depthWrite: false,
+      toneMapped: false,
+    }),
+  )
+  sprite.userData = {
+    pixelWidth: canvas.width / 2.4,
+    pixelHeight: canvas.height / 2.4,
+    priority: label.priority,
+    district,
+  }
+  sprite.renderOrder = 20
   return sprite
 }
 
-export function TerrainScene({
-  data,
-  displayDepth,
-  context,
-  view,
-  dimension,
-  threshold,
-  verticalExaggeration,
-  waterDepthExaggeration,
-  showWater,
-  showBasemap,
-  showBuildings,
-  showNetwork,
-  showRoadImpacts,
-  roadImpactDepth,
-  roadImpactAgreement,
-  showLabels,
-  resetNonce,
-}: TerrainSceneProps) {
+export function TerrainScene(props: Props) {
+  const {
+    data,
+    context,
+    displayDepth,
+    view,
+    dimension,
+    threshold,
+    verticalExaggeration,
+    waterDepthExaggeration,
+    showWater,
+    showBasemap,
+    showBuildings,
+    showNetwork,
+    showLabels,
+    showRoadImpacts,
+    roadImpactDepth,
+    roadImpactAgreement,
+    action,
+    focus,
+    selected,
+    onSelect,
+  } = props
   const hostRef = useRef<HTMLDivElement>(null)
   const sceneRef = useRef<SceneState | null>(null)
-  const [basemapTexture, setBasemapTexture] = useState<THREE.CanvasTexture | null>(null)
+  const selectRef = useRef(onSelect)
+  selectRef.current = onSelect
+  const [texture, setTexture] = useState<THREE.CanvasTexture | null>(null)
+  const [basemapFailed, setBasemapFailed] = useState(false)
+  const [webglError, setWebglError] = useState(false)
+  const [contextLost, setContextLost] = useState(false)
+  const member =
+    data.members.find(
+      (item) => item.id === (view === 'city' || view === 'agreement' ? 'fabdem' : view),
+    ) ?? data.members[0]
+  const exaggeration = dimension === '2d' ? 0 : verticalExaggeration
+  const surface = useRef({ dimension, member, exaggeration })
+  surface.current = { dimension, member, exaggeration }
 
   useEffect(() => {
-    let cancelled = false
-    if (!showBasemap) {
-      setBasemapTexture((current) => {
-        current?.dispose()
-        return null
+    if (!showBasemap) return
+    const controller = new AbortController()
+    let loaded: THREE.CanvasTexture | null = null
+    setBasemapFailed(false)
+    loadOsmBasemapTexture(data.metadata.grid.geographicBounds, 15, undefined, controller.signal)
+      .then((next) => {
+        if (controller.signal.aborted) {
+          next.dispose()
+          return
+        }
+        loaded = next
+        setTexture(next)
       })
-      return
-    }
-    loadOsmBasemapTexture(data.metadata.grid.geographicBounds)
-      .then((texture) => {
-        if (cancelled) texture.dispose()
-        else setBasemapTexture((current) => {
-          current?.dispose()
-          return texture
-        })
-      })
-      .catch((reason: unknown) => {
-        console.warn('OSM basemap unavailable; retaining local vector context.', reason)
+      .catch(() => {
+        if (!controller.signal.aborted) setBasemapFailed(true)
       })
     return () => {
-      cancelled = true
+      controller.abort()
+      loaded?.dispose()
+      setTexture(null)
     }
-  }, [data.metadata.grid.geographicBounds, showBasemap])
+  }, [data, showBasemap])
 
   useEffect(() => {
     const host = hostRef.current
     if (!host) return
-
-    const scene = new THREE.Scene()
-    scene.background = new THREE.Color('#08161d')
-    scene.fog = new THREE.FogExp2('#08161d', 0.00013)
-    const camera = new THREE.PerspectiveCamera(38, 1, 5, 40000)
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false })
+    let renderer: THREE.WebGLRenderer
+    try {
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false })
+    } catch {
+      setWebglError(true)
+      return
+    }
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+    renderer.setSize(host.clientWidth, host.clientHeight, false)
     renderer.outputColorSpace = THREE.SRGBColorSpace
     renderer.toneMapping = THREE.ACESFilmicToneMapping
-    renderer.toneMappingExposure = 1.08
-    host.appendChild(renderer.domElement)
-
-    const controls = new OrbitControls(camera, renderer.domElement)
-    controls.enableDamping = true
-    controls.dampingFactor = 0.07
-    controls.maxPolarAngle = Math.PI * 0.48
-    controls.minDistance = 500
-    controls.maxDistance = 14000
-    controls.zoomToCursor = true
-    controls.screenSpacePanning = true
-
-    scene.add(new THREE.HemisphereLight('#c8ecf1', '#25362f', 2.4))
-    const sun = new THREE.DirectionalLight('#fff0ce', 3.1)
-    sun.position.set(-2400, 4200, -1800)
-    scene.add(sun)
-
-    const base = new THREE.Mesh(
-      new THREE.PlaneGeometry(7000, 7000),
-      new THREE.MeshStandardMaterial({ color: '#0b2027', roughness: 1 }),
+    renderer.toneMappingExposure = 1.05
+    renderer.domElement.setAttribute(
+      'aria-label',
+      'Lahore flood map. Drag to move. Click to inspect a location.',
     )
-    base.rotation.x = -Math.PI / 2
-    base.position.y = -8
-    scene.add(base)
-    const gridHelper = new THREE.GridHelper(7000, 28, '#28474d', '#152f37')
-    gridHelper.position.y = -6
-    scene.add(gridHelper)
-
-    const terrainModel = new THREE.Group()
-    const waterModel = new THREE.Group()
-    const contextModel = new THREE.Group()
-    scene.add(terrainModel, waterModel, contextModel)
-
-    const resizeObserver = new ResizeObserver(() => {
-      const width = host.clientWidth
-      const height = host.clientHeight
-      renderer.setSize(width, height, false)
-      camera.aspect = width / Math.max(height, 1)
-      camera.updateProjectionMatrix()
-    })
-    resizeObserver.observe(host)
-
+    renderer.domElement.tabIndex = 0
+    host.appendChild(renderer.domElement)
+    const scene = new THREE.Scene()
+    scene.background = new THREE.Color('#e5ebe2')
+    scene.fog = new THREE.Fog('#e5ebe2', 18000, 34000)
+    const camera = new THREE.PerspectiveCamera(
+      38,
+      host.clientWidth / Math.max(host.clientHeight, 1),
+      2,
+      45000,
+    )
+    const controls = new OrbitControls(camera, renderer.domElement)
+    controls.enableDamping = !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    controls.dampingFactor = 0.12
+    controls.minDistance = 180
+    controls.maxDistance = 22000
+    controls.maxPolarAngle = Math.PI * 0.46
+    controls.zoomToCursor = true
+    controls.screenSpacePanning = false
+    scene.add(new THREE.HemisphereLight('#ffffff', '#899987', 2.0))
+    const sun = new THREE.DirectionalLight('#fffae7', 2.5)
+    sun.position.set(-2600, 4200, -1700)
+    scene.add(sun)
+    const groups = Object.fromEntries(
+      (['terrain', 'water', 'buildings', 'network', 'impacts', 'labels', 'selection'] as const).map(
+        (name) => [name, new THREE.Group()],
+      ),
+    ) as Record<GroupName, THREE.Group>
+    Object.values(groups).forEach((group) => scene.add(group))
     const state: SceneState = {
       scene,
       camera,
       renderer,
       controls,
-      terrainModel,
-      waterModel,
-      contextModel,
-      resizeObserver,
+      groups,
       frame: 0,
+      invalidate: () => {},
     }
-    sceneRef.current = state
-    resetCamera(state, data, dimension)
-
-    let renderCount = 0
+    const projected = new THREE.Vector3()
+    const cameraSpace = new THREE.Vector3()
     const render = () => {
-      state.frame = requestAnimationFrame(render)
+      state.frame = 0
       controls.update()
-      renderCount += 1
-      const sprites = contextModel.children
-        .filter((child): child is THREE.Sprite => child instanceof THREE.Sprite)
-        .sort((first, second) => (second.userData.labelPriority as number)
-          - (first.userData.labelPriority as number))
-      const occupied: Array<{ left: number; right: number; top: number; bottom: number }> = []
-      const focalPixels = host.clientHeight / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)))
-      const layoutLabels = renderCount % 3 === 0
-      for (const child of sprites) {
-        const width = child.userData.baseLabelWidth as number
-        const priority = child.userData.labelPriority as number
-        const distance = camera.position.distanceTo(child.position)
-        const distanceScale = THREE.MathUtils.clamp(distance / 6000, 0.24, 1.2)
-        child.scale.set(width * distanceScale, width * 128 / 512 * distanceScale, 1)
-        if (!layoutLabels) continue
-        const projected = child.position.clone().project(camera)
-        if (distance > labelMaximumDistance(priority)
-          || projected.z < -1 || projected.z > 1
-          || Math.abs(projected.x) > 1.08 || Math.abs(projected.y) > 1.08) {
+      camera.updateMatrixWorld()
+      const occupied: { left: number; right: number; top: number; bottom: number }[] = []
+      const width = host.clientWidth
+      const height = host.clientHeight
+      const focal = height / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)))
+      const marker = groups.selection.children.find((child) => child.userData.marker)
+      if (marker)
+        marker.scale.setScalar(((camera.position.distanceTo(marker.position) / focal) * 12) / 23)
+      for (const child of groups.labels.children as THREE.Sprite[]) {
+        cameraSpace.copy(child.position).applyMatrix4(camera.matrixWorldInverse)
+        const distance = -cameraSpace.z
+        const priority = child.userData.priority as number
+        const maxDistance =
+          priority >= 95
+            ? 22000
+            : priority >= 85
+              ? 13000
+              : priority >= 70
+                ? 8000
+                : priority >= 55
+                  ? 4500
+                  : 2300
+        projected.copy(child.position).project(camera)
+        if (
+          distance < 0 ||
+          distance > maxDistance ||
+          Math.abs(projected.x) > 1 ||
+          Math.abs(projected.y) > 1 ||
+          projected.z > 1
+        ) {
           child.visible = false
           continue
         }
-        const centreX = (projected.x + 1) * host.clientWidth / 2
-        const centreY = (1 - projected.y) * host.clientHeight / 2
-        const pixelWidth = width * distanceScale / distance * focalPixels
-        const pixelHeight = pixelWidth * 128 / 512
-        const rectangle = {
-          left: centreX - pixelWidth / 2 - 3,
-          right: centreX + pixelWidth / 2 + 3,
-          top: centreY - pixelHeight / 2 - 2,
-          bottom: centreY + pixelHeight / 2 + 2,
+        const pw = child.userData.pixelWidth as number
+        const ph = child.userData.pixelHeight as number
+        child.scale.set((pw * distance) / focal, (ph * distance) / focal, 1)
+        const x = ((projected.x + 1) * width) / 2
+        const y = ((1 - projected.y) * height) / 2
+        const box = {
+          left: x - pw / 2 - 4,
+          right: x + pw / 2 + 4,
+          top: y - ph / 2 - 3,
+          bottom: y + ph / 2 + 3,
         }
-        if (rectangle.right > host.clientWidth - 255 || rectangle.bottom > host.clientHeight - 96) {
-          child.visible = false
-          continue
-        }
-        const overlaps = occupied.some((other) => rectangle.left < other.right
-          && rectangle.right > other.left && rectangle.top < other.bottom
-          && rectangle.bottom > other.top)
-        child.visible = !overlaps
-        if (!overlaps) occupied.push(rectangle)
+        const overlaps = occupied.some(
+          (other) =>
+            box.left < other.right &&
+            box.right > other.left &&
+            box.top < other.bottom &&
+            box.bottom > other.top,
+        )
+        child.visible =
+          !overlaps &&
+          box.left > 8 &&
+          box.right < width - 8 &&
+          box.top > 8 &&
+          box.bottom < height - 8 &&
+          !(box.top < 90 && box.left < 260) &&
+          !(box.right > width - 105 && box.top < 250) &&
+          !(box.bottom > height - 120 && box.left < 230)
+        if (child.visible) occupied.push(box)
       }
       renderer.render(scene, camera)
     }
-    render()
-
+    state.invalidate = () => {
+      if (!state.frame && !renderer.getContext().isContextLost())
+        state.frame = requestAnimationFrame(render)
+    }
+    sceneRef.current = state
+    controls.addEventListener('change', state.invalidate)
+    const observer = new ResizeObserver(() => {
+      const w = host.clientWidth
+      const h = host.clientHeight
+      if (!w || !h) return
+      renderer.setSize(w, h, false)
+      camera.aspect = w / h
+      camera.updateProjectionMatrix()
+      state.invalidate()
+    })
+    observer.observe(host)
+    const pointerStart = new THREE.Vector2()
+    const raycaster = new THREE.Raycaster()
+    let dragged = false
+    let primaryPointer = -1
+    const down = (event: PointerEvent) => {
+      if (!event.isPrimary) {
+        dragged = true
+        return
+      }
+      primaryPointer = event.pointerId
+      pointerStart.set(event.clientX, event.clientY)
+      dragged = event.button !== 0
+    }
+    const move = (event: PointerEvent) => {
+      if (Math.hypot(event.clientX - pointerStart.x, event.clientY - pointerStart.y) > 5)
+        dragged = true
+    }
+    const up = (event: PointerEvent) => {
+      if (dragged || event.pointerId !== primaryPointer) return
+      const bounds = renderer.domElement.getBoundingClientRect()
+      raycaster.setFromCamera(
+        new THREE.Vector2(
+          ((event.clientX - bounds.left) / bounds.width) * 2 - 1,
+          (-(event.clientY - bounds.top) / bounds.height) * 2 + 1,
+        ),
+        camera,
+      )
+      const hit = raycaster.intersectObjects(groups.terrain.children)[0]
+      if (hit) selectRef.current({ x: hit.point.x, z: hit.point.z })
+    }
+    const lost = (event: Event) => {
+      event.preventDefault()
+      setContextLost(true)
+    }
+    const restored = () => {
+      setContextLost(false)
+      state.invalidate()
+    }
+    renderer.domElement.addEventListener('pointerdown', down)
+    renderer.domElement.addEventListener('pointermove', move)
+    renderer.domElement.addEventListener('pointerup', up)
+    renderer.domElement.addEventListener('webglcontextlost', lost)
+    renderer.domElement.addEventListener('webglcontextrestored', restored)
+    resetCamera(state, data, surface.current.dimension)
     return () => {
+      state.invalidate = () => {}
       cancelAnimationFrame(state.frame)
-      resizeObserver.disconnect()
+      observer.disconnect()
       controls.dispose()
-      disposeGroup(terrainModel, false)
-      disposeGroup(waterModel)
-      disposeGroup(contextModel)
-      base.geometry.dispose()
-      disposeMaterial(base.material)
+      renderer.domElement.removeEventListener('pointerdown', down)
+      renderer.domElement.removeEventListener('pointermove', move)
+      renderer.domElement.removeEventListener('pointerup', up)
+      renderer.domElement.removeEventListener('webglcontextlost', lost)
+      renderer.domElement.removeEventListener('webglcontextrestored', restored)
+      Object.values(groups).forEach(disposeGroup)
       renderer.dispose()
       renderer.domElement.remove()
       sceneRef.current = null
     }
   }, [data, context])
 
-  const selected =
-    data.members.find((member) => member.id === (view === 'city' || view === 'agreement' ? 'fabdem' : view))
-    ?? data.members[0]
-  const renderExaggeration = dimension === '2d' ? 0 : verticalExaggeration
-
   useEffect(() => {
     const state = sceneRef.current
     if (!state) return
-    disposeGroup(state.terrainModel, false)
-    const options = {
+    disposeGroup(state.groups.terrain)
+    const geometry = buildTerrainGeometry({
       grid: data.metadata.grid,
       active: data.active,
-      terrain: selected.terrain,
-      terrainMinimum: selected.terrainMinimumMetres,
-      verticalExaggeration: renderExaggeration,
-    }
-    const terrainGeometry = buildTerrainGeometry(options)
-    if (basemapTexture) {
-      basemapTexture.anisotropy = state.renderer.capabilities.getMaxAnisotropy()
-    }
-    const mappedCity = view === 'city' && showBasemap ? basemapTexture : null
-    const terrainMaterial = new THREE.MeshStandardMaterial({
-      vertexColors: view !== 'city',
-      color: view === 'city' ? (mappedCity ? '#b8c2ba' : '#29413e') : '#ffffff',
-      map: mappedCity || null,
-      roughness: 0.96,
-      metalness: 0,
-      side: THREE.DoubleSide,
+      terrain: member.terrain,
+      terrainMinimum: member.terrainMinimumMetres,
+      verticalExaggeration: exaggeration,
     })
-    state.terrainModel.add(new THREE.Mesh(terrainGeometry, terrainMaterial))
-
-  }, [
-    basemapTexture,
-    data,
-    dimension,
-    renderExaggeration,
-    selected,
-    showBasemap,
-    view,
-  ])
+    const mapped = showBasemap ? texture : null
+    if (mapped) mapped.anisotropy = state.renderer.capabilities.getMaxAnisotropy()
+    const mesh = new THREE.Mesh(
+      geometry,
+      new THREE.MeshStandardMaterial({
+        color: mapped ? '#ffffff' : '#bfcdb6',
+        vertexColors: !mapped && view !== 'city',
+        map: mapped,
+        roughness: 1,
+        side: THREE.DoubleSide,
+      }),
+    )
+    state.groups.terrain.add(mesh)
+    state.invalidate()
+  }, [data, member, exaggeration, texture, showBasemap, view])
 
   useEffect(() => {
     const state = sceneRef.current
     if (!state) return
-    disposeGroup(state.waterModel)
-    if (!showWater) return
-    const options = {
-      grid: data.metadata.grid,
-      active: data.active,
-      terrain: selected.terrain,
-      terrainMinimum: selected.terrainMinimumMetres,
-      verticalExaggeration: renderExaggeration,
-      waterDepthExaggeration,
-      waterBaseOffset: dimension === '2d' ? 4 : 0.35,
-    }
-    const geometry = view === 'agreement'
-      ? buildAgreementGeometry(options, data.maximumDepth, data.agreement)
-      : buildWaterGeometry(options, displayDepth, threshold)
-    const material = new THREE.MeshPhysicalMaterial({
-      vertexColors: true,
-      transparent: true,
-      opacity: view === 'agreement' ? 0.88 : 0.72,
-      roughness: 0.16,
-      clearcoat: 0.4,
-      side: THREE.DoubleSide,
-      depthWrite: false,
-    })
-    const waterMesh = new THREE.Mesh(geometry, material)
-    waterMesh.renderOrder = 5
-    state.waterModel.add(waterMesh)
-  }, [
-    data,
-    dimension,
-    displayDepth,
-    renderExaggeration,
-    selected,
-    showWater,
-    threshold,
-    view,
-    waterDepthExaggeration,
-  ])
-
-  useEffect(() => {
-    const state = sceneRef.current
-    if (!state) return
-    disposeGroup(state.contextModel)
-    const urbanOptions = {
-      context,
-      grid: data.metadata.grid,
-      terrain: selected.terrain,
-      terrainMinimum: selected.terrainMinimumMetres,
-      verticalExaggeration: renderExaggeration,
-      flat: dimension === '2d',
-    }
-    if (showBuildings) {
-      const geometry = buildBuildingGeometry(urbanOptions)
-      const material = new THREE.MeshStandardMaterial({
-        vertexColors: true,
-        roughness: 0.88,
-        metalness: 0,
-        side: THREE.DoubleSide,
-      })
-      state.contextModel.add(new THREE.Mesh(geometry, material))
-    }
-    if (showNetwork) {
-      const useImpact = showRoadImpacts && view === 'city'
-      const geometry = buildNetworkGeometry(
-        urbanOptions,
-        useImpact ? roadImpactDepth : undefined,
-        useImpact ? roadImpactAgreement : undefined,
-        data.roadImpact?.memberCount,
-      )
-      const material = new THREE.MeshStandardMaterial({
-        vertexColors: true,
-        roughness: 0.9,
-        side: THREE.DoubleSide,
-      })
-      const network = new THREE.Mesh(geometry, material)
-      network.renderOrder = 3
-      state.contextModel.add(network)
-    }
-    if (showLabels) {
-      const elevationOptions = {
+    disposeGroup(state.groups.water)
+    if (showWater) {
+      const options = {
         grid: data.metadata.grid,
-        terrain: selected.terrain,
-        terrainMinimum: selected.terrainMinimumMetres,
-        verticalExaggeration: renderExaggeration,
-        flat: dimension === '2d',
+        active: data.active,
+        terrain: member.terrain,
+        terrainMinimum: member.terrainMinimumMetres,
+        verticalExaggeration: exaggeration,
+        waterDepthExaggeration: dimension === '2d' ? 0 : waterDepthExaggeration,
+        waterBaseOffset: dimension === '2d' ? 4 : 0.4,
       }
-      for (const label of context.metadata.labels) {
-        const sprite = createLabelSprite(label)
-        const y = elevationAt(label.x, label.z, elevationOptions) + (dimension === '2d' ? 9 : 28)
-        sprite.position.set(label.x, y, label.z)
-        state.contextModel.add(sprite)
-      }
+      const geometry =
+        view === 'agreement'
+          ? buildAgreementGeometry(options, data.maximumDepth, data.agreement)
+          : buildWaterGeometry(options, displayDepth, threshold)
+      // Unlit colours keep the legend meaningful at every angle and time.
+      const mesh = new THREE.Mesh(
+        geometry,
+        new THREE.MeshBasicMaterial({
+          vertexColors: true,
+          transparent: true,
+          opacity: view === 'agreement' ? 0.76 : 0.78,
+          side: THREE.DoubleSide,
+          depthWrite: false,
+          toneMapped: false,
+        }),
+      )
+      mesh.renderOrder = 5
+      state.groups.water.add(mesh)
     }
+    state.invalidate()
   }, [
-    context,
     data,
+    member,
+    exaggeration,
+    waterDepthExaggeration,
     dimension,
-    renderExaggeration,
-    roadImpactAgreement,
-    roadImpactDepth,
-    selected,
-    showBuildings,
-    showLabels,
+    view,
+    displayDepth,
+    threshold,
+    showWater,
+  ])
+
+  // Buildings and labels deliberately do not depend on the flood frame.
+  useEffect(() => {
+    const state = sceneRef.current
+    if (!state) return
+    disposeGroup(state.groups.buildings)
+    if (showBuildings) {
+      const geometry = buildBuildingGeometry({
+        context,
+        grid: data.metadata.grid,
+        terrain: member.terrain,
+        terrainMinimum: member.terrainMinimumMetres,
+        verticalExaggeration: exaggeration,
+        flat: dimension === '2d',
+      })
+      state.groups.buildings.add(
+        new THREE.Mesh(
+          geometry,
+          new THREE.MeshStandardMaterial({
+            vertexColors: true,
+            roughness: 0.95,
+            side: THREE.DoubleSide,
+          }),
+        ),
+      )
+    }
+    state.invalidate()
+  }, [data, context, member, exaggeration, dimension, showBuildings])
+
+  useEffect(() => {
+    const state = sceneRef.current
+    if (!state) return
+    disposeGroup(state.groups.network)
+    if (showNetwork) {
+      const geometry = buildNetworkGeometry({
+        context,
+        grid: data.metadata.grid,
+        terrain: member.terrain,
+        terrainMinimum: member.terrainMinimumMetres,
+        verticalExaggeration: exaggeration,
+        flat: dimension === '2d',
+      })
+      const mesh = new THREE.Mesh(
+        geometry,
+        new THREE.MeshBasicMaterial({
+          vertexColors: true,
+          side: THREE.DoubleSide,
+          toneMapped: false,
+        }),
+      )
+      mesh.renderOrder = 3
+      state.groups.network.add(mesh)
+    }
+    state.invalidate()
+  }, [data, context, member, exaggeration, dimension, showNetwork])
+
+  useEffect(() => {
+    const state = sceneRef.current
+    if (!state) return
+    disposeGroup(state.groups.impacts)
+    if (showNetwork && showRoadImpacts && view === 'city') {
+      const geometry = buildNetworkGeometry(
+        {
+          context,
+          grid: data.metadata.grid,
+          terrain: member.terrain,
+          terrainMinimum: member.terrainMinimumMetres,
+          verticalExaggeration: exaggeration,
+          flat: dimension === '2d',
+        },
+        roadImpactDepth,
+        roadImpactAgreement,
+        data.roadImpact?.memberCount,
+        threshold,
+        true,
+      )
+      const mesh = new THREE.Mesh(
+        geometry,
+        new THREE.MeshBasicMaterial({
+          vertexColors: true,
+          side: THREE.DoubleSide,
+          toneMapped: false,
+          depthTest: false,
+          depthWrite: false,
+        }),
+      )
+      mesh.renderOrder = 7
+      state.groups.impacts.add(mesh)
+    }
+    state.invalidate()
+  }, [
+    data,
+    context,
+    member,
+    exaggeration,
+    dimension,
+    view,
     showNetwork,
     showRoadImpacts,
-    view,
+    roadImpactDepth,
+    roadImpactAgreement,
+    threshold,
   ])
+
+  useEffect(() => {
+    const state = sceneRef.current
+    if (!state) return
+    disposeGroup(state.groups.labels)
+    if (showLabels) {
+      for (const label of [...context.metadata.labels].sort((a, b) => b.priority - a.priority)) {
+        const sprite = createLabel(label)
+        const y = elevationAt(label.x, label.z, {
+          grid: data.metadata.grid,
+          terrain: member.terrain,
+          terrainMinimum: member.terrainMinimumMetres,
+          verticalExaggeration: exaggeration,
+          flat: dimension === '2d',
+        })
+        sprite.position.set(label.x, y + (dimension === '2d' ? 8 : 22), label.z)
+        state.groups.labels.add(sprite)
+      }
+    }
+    state.invalidate()
+  }, [data, context, member, exaggeration, dimension, showLabels])
+
+  useEffect(() => {
+    const state = sceneRef.current
+    if (!state) return
+    disposeGroup(state.groups.selection)
+    if (selected) {
+      const options = {
+        grid: data.metadata.grid,
+        terrain: member.terrain,
+        terrainMinimum: member.terrainMinimumMetres,
+        verticalExaggeration: exaggeration,
+        flat: dimension === '2d',
+      }
+      const ring = new THREE.Mesh(
+        new THREE.RingGeometry(17, 23, 48),
+        new THREE.MeshBasicMaterial({
+          color: '#224f42',
+          side: THREE.DoubleSide,
+          depthTest: false,
+          toneMapped: false,
+        }),
+      )
+      ring.rotation.x = -Math.PI / 2
+      ring.position.set(selected.x, elevationAt(selected.x, selected.z, options) + 6, selected.z)
+      ring.renderOrder = 19
+      ring.userData.marker = true
+      state.groups.selection.add(ring)
+      if (selected.roadName && context.networkNames) {
+        const points: THREE.Vector3[] = []
+        context.networkNames.forEach((name, line) => {
+          if (name.trim() !== selected.roadName) return
+          const start = context.networkIndex[line * 3]
+          const length = context.networkIndex[line * 3 + 1]
+          for (let i = start; i < start + length - 1; i += 1) {
+            for (const p of [i, i + 1]) {
+              const x = context.networkCoordinates[p * 2]
+              const z = context.networkCoordinates[p * 2 + 1]
+              points.push(new THREE.Vector3(x, elevationAt(x, z, options) + 5, z))
+            }
+          }
+        })
+        const line = new THREE.LineSegments(
+          new THREE.BufferGeometry().setFromPoints(points),
+          new THREE.LineBasicMaterial({ color: '#254e3d', depthTest: false, toneMapped: false }),
+        )
+        line.renderOrder = 18
+        state.groups.selection.add(line)
+      }
+    }
+    state.invalidate()
+  }, [selected, data, context, member, exaggeration, dimension])
 
   useEffect(() => {
     if (sceneRef.current) resetCamera(sceneRef.current, data, dimension)
-  }, [data, dimension, resetNonce])
+  }, [data, dimension])
+  useEffect(() => {
+    const state = sceneRef.current
+    if (!state) return
+    const { camera, controls } = state
+    if (action.type === 'reset') resetCamera(state, data, dimension)
+    else if (action.type === 'north') {
+      const delta = camera.position.clone().sub(controls.target)
+      camera.position
+        .copy(controls.target)
+        .add(new THREE.Vector3(0, delta.y, Math.hypot(delta.x, delta.z)))
+    } else {
+      const delta = camera.position.clone().sub(controls.target)
+      const distance = THREE.MathUtils.clamp(
+        delta.length() * (action.type === 'in' ? 0.7 : 1.4),
+        controls.minDistance,
+        controls.maxDistance,
+      )
+      camera.position.copy(controls.target).add(delta.setLength(distance))
+    }
+    controls.update()
+    state.invalidate()
+    // A command should not replay when an unrelated view property changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [action])
+  useEffect(() => {
+    const state = sceneRef.current
+    if (!state || !focus) return
+    const { camera, controls } = state
+    const offset = camera.position
+      .clone()
+      .sub(controls.target)
+      .setLength(Math.min(camera.position.distanceTo(controls.target), 1600))
+    const { member: terrain, exaggeration: ex, dimension: dim } = surface.current
+    const y = elevationAt(focus.x, focus.z, {
+      grid: data.metadata.grid,
+      terrain: terrain.terrain,
+      terrainMinimum: terrain.terrainMinimumMetres,
+      verticalExaggeration: ex,
+      flat: dim === '2d',
+    })
+    controls.target.set(focus.x, y, focus.z)
+    camera.position.copy(controls.target).add(offset)
+    controls.update()
+    state.invalidate()
+  }, [focus, data])
 
-  return <div className="scene" ref={hostRef} aria-label="Interactive Lahore flood map" />
+  return (
+    <>
+      <div className="scene" ref={hostRef} />
+      {(webglError || contextLost) && (
+        <div className="scene-error" role="alert">
+          <h2>{contextLost ? 'The map paused.' : '3D graphics are unavailable.'}</h2>
+          <p>
+            {contextLost
+              ? 'Your browser released the graphics context. Reload to restore the map.'
+              : 'Try a browser with WebGL enabled. You can still explore the storm and road summaries.'}
+          </p>
+          <button className="primary-button" onClick={() => window.location.reload()}>
+            Reload map
+          </button>
+        </div>
+      )}
+      {basemapFailed && showBasemap && (
+        <div className="map-status" role="status">
+          Basemap unavailable. Local buildings, roads and labels are still shown.
+        </div>
+      )}
+    </>
+  )
 }

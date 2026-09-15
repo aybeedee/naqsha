@@ -5,6 +5,24 @@ first milestones are deliberately data-first: they test whether freely
 available terrain can support useful flood modelling over a 5–25 km² pilot,
 then expose the resulting uncertainty in an interactive 3D viewer.
 
+## Open the explorer
+
+```bash
+cd web
+npm ci
+npm run dev
+```
+
+Open `http://localhost:5174`. The checked-in data are enough to explore both
+study areas; Docker and the Python pipeline are only needed to regenerate
+models and assets.
+
+Search for a place or road, play the storm timeline, or click the map to
+inspect a location. **Storm**, **Roads** and **Layers** keep the main controls
+separate. **About** explains the data and model limitations. The displayed
+example is 100 mm over two hours, not a live forecast. See the
+[viewer guide](docs/web-viewer.md) for result definitions and shortcuts.
+
 ## Current vertical slice
 
 The terrain audit:

@@ -11,33 +11,33 @@ interface UrbanGeometryOptions {
 }
 
 const sourceColours = [
-  new THREE.Color('#99a7a1'),
-  new THREE.Color('#c1c6ba'),
-  new THREE.Color('#aebbb3'),
-  new THREE.Color('#9eaaa4'),
-  new THREE.Color('#adb0a2'),
+  new THREE.Color('#c5cabc'),
+  new THREE.Color('#d5d5c8'),
+  new THREE.Color('#cdd1c4'),
+  new THREE.Color('#c5cabc'),
+  new THREE.Color('#d5d5c8'),
 ]
 
 const roadImpactColours = {
-  shallow: new THREE.Color('#e2d263'),
-  moderate: new THREE.Color('#f19a4b'),
-  severe: new THREE.Color('#ed5d55'),
-  uncertain: new THREE.Color('#9b7565'),
+  shallow: new THREE.Color('#c8b363'),
+  moderate: new THREE.Color('#dc9849'),
+  severe: new THREE.Color('#cb624d'),
 }
 
 export function roadImpactColour(
   depthMillimetres: number,
-  wetMemberCount: number,
-  memberCount: number,
+  _wetMemberCount: number,
+  _memberCount: number,
   fallback: THREE.Color,
 ): THREE.Color {
   if (depthMillimetres === 65535 || depthMillimetres < 50) return fallback
-  const risk = depthMillimetres >= 300
-    ? roadImpactColours.severe
-    : depthMillimetres >= 100 ? roadImpactColours.moderate : roadImpactColours.shallow
-  if (depthMillimetres >= 100 && wetMemberCount < memberCount) {
-    return risk.clone().lerp(roadImpactColours.uncertain, 0.42)
-  }
+  const risk =
+    depthMillimetres >= 300
+      ? roadImpactColours.severe
+      : depthMillimetres >= 100
+        ? roadImpactColours.moderate
+        : roadImpactColours.shallow
+  // Depth colours stay fixed. Terrain disagreement has its own map layer.
   return risk
 }
 
@@ -125,6 +125,8 @@ export function buildNetworkGeometry(
   impactDepth?: Uint16Array,
   impactAgreement?: Uint8Array,
   memberCount = 3,
+  threshold = 0.05,
+  onlyImpacted = false,
 ): THREE.BufferGeometry {
   const { context } = options
   const vertices: number[] = []
@@ -134,9 +136,20 @@ export function buildNetworkGeometry(
     const length = context.networkIndex[line * 3 + 1]
     const classId = context.networkIndex[line * 3 + 2]
     const style = context.metadata.network.classes[classId]
-    const colour = impactDepth && impactAgreement
-      ? roadImpactColour(impactDepth[line], impactAgreement[line], memberCount, new THREE.Color(style.colour))
-      : new THREE.Color(style.colour)
+    const flagged =
+      impactDepth &&
+      impactDepth[line] !== 65535 &&
+      impactDepth[line] >= Math.round(threshold * 1000)
+    if (onlyImpacted && !flagged) continue
+    const colour =
+      impactDepth && impactAgreement
+        ? roadImpactColour(
+            flagged ? impactDepth[line] : 0,
+            impactAgreement[line],
+            memberCount,
+            new THREE.Color(style.colour),
+          )
+        : new THREE.Color(style.colour)
     const halfWidth = style.widthMetres / 2
     for (let point = 0; point < length - 1; point += 1) {
       const first = (offset + point) * 2
@@ -147,8 +160,8 @@ export function buildNetworkGeometry(
       const z2 = context.networkCoordinates[second + 1]
       const segmentLength = Math.hypot(x2 - x1, z2 - z1)
       if (segmentLength === 0) continue
-      const nx = -(z2 - z1) / segmentLength * halfWidth
-      const nz = (x2 - x1) / segmentLength * halfWidth
+      const nx = (-(z2 - z1) / segmentLength) * halfWidth
+      const nz = ((x2 - x1) / segmentLength) * halfWidth
       const y1 = terrainY(x1, z1, options) + (options.flat ? 2.3 : 1.2)
       const y2 = terrainY(x2, z2, options) + (options.flat ? 2.3 : 1.2)
       appendVertex(vertices, colours, x1 + nx, y1, z1 + nz, colour)

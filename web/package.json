@@ -7,6 +7,8 @@
     "dev": "vite --host 0.0.0.0",
     "build": "tsc -b && vite build",
     "test": "vitest run",
+    "format": "prettier --write src index.html",
+    "format:check": "prettier --check src index.html",
     "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {
@@ -15,10 +17,13 @@
     "three": "0.185.1"
   },
   "devDependencies": {
+    "@types/node": "22.20.2",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4",
     "@types/three": "0.185.4",
     "@vitejs/plugin-react": "6.1.0",
+    "jsdom": "^30.0.1",
+    "prettier": "3.9.6",
     "typescript": "7.0.2",
     "vite": "8.2.2",
     "vitest": "4.1.11"

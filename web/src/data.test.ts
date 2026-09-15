@@ -18,13 +18,15 @@ function timelineFixture(): ScenarioData {
 
 describe('timelineDepthForView', () => {
   it('decodes a member frame using the manifest scale', () => {
-    expect(Array.from(timelineDepthForView(timelineFixture(), 'copernicus', 0)))
-      .toEqual([0.10000000149011612, 0.8999999761581421])
+    expect(Array.from(timelineDepthForView(timelineFixture(), 'copernicus', 0))).toEqual([
+      0.10000000149011612, 0.8999999761581421,
+    ])
   })
 
   it('computes the three-member median at the selected frame', () => {
-    expect(Array.from(timelineDepthForView(timelineFixture(), 'city', 1)))
-      .toEqual([0.4000000059604645, 0.5])
+    expect(Array.from(timelineDepthForView(timelineFixture(), 'city', 1))).toEqual([
+      0.4000000059604645, 0.5,
+    ])
   })
 
   it('rejects a frame outside the exported timeline', () => {

@@ -28,15 +28,28 @@ interface BoundaryEdge {
   colorFor: (index: number) => THREE.Color
 }
 
-const terrainLow = new THREE.Color('#273f3d')
-const terrainHigh = new THREE.Color('#b7b08d')
-const shallowWater = new THREE.Color('#42d9d2')
-const deepWater = new THREE.Color('#1766b1')
+const terrainLow = new THREE.Color('#b7c9b0')
+const terrainHigh = new THREE.Color('#d7cdb3')
+const waterStops = [0, 0.3, 1, 2]
+const waterColors = ['#90cee0', '#48a4c8', '#236ca1', '#173a6b'].map((hex) => new THREE.Color(hex))
+export function waterColor(depth: number): THREE.Color {
+  const value = THREE.MathUtils.clamp(depth, 0, 2)
+  for (let stop = 1; stop < waterStops.length; stop += 1) {
+    if (value <= waterStops[stop])
+      return waterColors[stop - 1]
+        .clone()
+        .lerp(
+          waterColors[stop],
+          (value - waterStops[stop - 1]) / (waterStops[stop] - waterStops[stop - 1]),
+        )
+  }
+  return waterColors[3].clone()
+}
 const agreementColors = [
   new THREE.Color('#000000'),
-  new THREE.Color('#f06c5e'),
-  new THREE.Color('#e9b949'),
-  new THREE.Color('#43d5c5'),
+  new THREE.Color('#dc806b'),
+  new THREE.Color('#d2b66c'),
+  new THREE.Color('#62b9a1'),
 ]
 
 function horizontalPosition(index: number, grid: GeometryGrid): [number, number] {
@@ -174,14 +187,29 @@ export function buildTerrainGeometry(options: SurfaceOptions): THREE.BufferGeome
       const northwest = row * grid.width + column
       const corners = [northwest, northwest + 1, northwest + grid.width, northwest + grid.width + 1]
       if (!corners.every((index) => active[index])) continue
-      appendTriangle(vertices, colors, [corners[0], corners[2], corners[1]], terrain, colorFor, options)
-      appendTriangle(vertices, colors, [corners[1], corners[2], corners[3]], terrain, colorFor, options)
+      appendTriangle(
+        vertices,
+        colors,
+        [corners[0], corners[2], corners[1]],
+        terrain,
+        colorFor,
+        options,
+      )
+      appendTriangle(
+        vertices,
+        colors,
+        [corners[1], corners[2], corners[3]],
+        terrain,
+        colorFor,
+        options,
+      )
     }
   }
   const geometry = finishGeometry(vertices, colors)
   const positions = geometry.getAttribute('position')
-  const extentX = Math.max((grid.width - 1) * grid.cellSizeMetres, 1)
-  const extentZ = Math.max((grid.height - 1) * grid.cellSizeMetres, 1)
+  // Geographic bounds cover cell edges; mesh vertices are cell centres.
+  const extentX = Math.max(grid.width * grid.cellSizeMetres, 1)
+  const extentZ = Math.max(grid.height * grid.cellSizeMetres, 1)
   const uvs: number[] = []
   for (let index = 0; index < positions.count; index += 1) {
     uvs.push(
@@ -203,12 +231,48 @@ export function buildWaterGeometry(
   const colors: number[] = []
   const groundY = terrainSceneY(options)
   const depthExaggeration = options.waterDepthExaggeration ?? 1
-  const topY = groundY.map((value, index) => value + Math.max(depth[index], 0.01) * depthExaggeration)
-  let maximumDepth = threshold
-  for (const value of depth) maximumDepth = Math.max(maximumDepth, value)
-  const colorFor = (index: number) =>
-    shallowWater.clone().lerp(deepWater, Math.min(depth[index] / maximumDepth, 1))
-  const rendered: VolumeTriangle[] = []
+  const topY = groundY.map(
+    (value, index) => value + Math.max(depth[index], 0.01) * depthExaggeration,
+  )
+  type Vertex = { key: string; x: number; z: number; base: number; top: number; depth: number }
+  const points = new Map<number, Vertex>()
+  const edges = new Map<string, { first: Vertex; second: Vertex; count: number }>()
+  const vertexAt = (index: number): Vertex => {
+    let point = points.get(index)
+    if (!point) {
+      const [x, z] = horizontalPosition(index, grid)
+      point = {
+        key: String(index),
+        x,
+        z,
+        base: groundY[index],
+        top: topY[index],
+        depth: depth[index],
+      }
+      points.set(index, point)
+    }
+    return point
+  }
+  const append = (point: Vertex, base = false) => {
+    vertices.push(point.x, base ? point.base : point.top, point.z)
+    const color = waterColor(point.depth)
+    if (base) color.multiplyScalar(0.8)
+    colors.push(color.r, color.g, color.b)
+  }
+  const intersect = (first: Vertex, second: Vertex): Vertex => {
+    const fraction = (threshold - first.depth) / (second.depth - first.depth)
+    if (fraction <= 1e-7) return first
+    if (fraction >= 1 - 1e-7) return second
+    const mix = (a: number, b: number) => a + (b - a) * fraction
+    return {
+      key: [first.key, second.key].sort().join(':'),
+      x: mix(first.x, second.x),
+      z: mix(first.z, second.z),
+      base: mix(first.base, second.base),
+      top: mix(first.top, second.top),
+      depth: threshold,
+    }
+  }
 
   for (let row = 0; row < grid.height - 1; row += 1) {
     for (let column = 0; column < grid.width - 1; column += 1) {
@@ -220,13 +284,47 @@ export function buildWaterGeometry(
         [corners[1], corners[2], corners[3]],
       ]
       for (const indices of triangles) {
-        if (indices.some((index) => depth[index] >= threshold)) {
-          rendered.push({ indices, colorFor })
+        if (!indices.some((index) => depth[index] + 1e-7 >= threshold)) continue
+        // Clip the displayed surface at the depth filter. A single wet vertex
+        // must not paint its dry neighbours as flooded ground.
+        const polygon: Vertex[] = []
+        for (let i = 0; i < 3; i += 1) {
+          const first = vertexAt(indices[i])
+          const second = vertexAt(indices[(i + 1) % 3])
+          const firstWet = first.depth + 1e-7 >= threshold
+          const secondWet = second.depth + 1e-7 >= threshold
+          if (firstWet !== secondWet) polygon.push(intersect(first, second))
+          if (secondWet) polygon.push(second)
+        }
+        const unique = polygon.filter(
+          (point, i) => polygon.findIndex((other) => other.key === point.key) === i,
+        )
+        if (unique.length < 3) continue
+        for (let i = 1; i < unique.length - 1; i += 1) {
+          append(unique[0])
+          append(unique[i])
+          append(unique[i + 1])
+        }
+        for (let i = 0; i < unique.length; i += 1) {
+          const first = unique[i]
+          const second = unique[(i + 1) % unique.length]
+          const key = [first.key, second.key].sort().join('|')
+          const existing = edges.get(key)
+          if (existing) existing.count += 1
+          else edges.set(key, { first, second, count: 1 })
         }
       }
     }
   }
-  appendVolume(vertices, colors, rendered, groundY, topY, grid)
+  for (const edge of edges.values()) {
+    if (edge.count !== 1) continue
+    append(edge.first, true)
+    append(edge.second, true)
+    append(edge.first)
+    append(edge.first)
+    append(edge.second, true)
+    append(edge.second)
+  }
   return finishGeometry(vertices, colors)
 }
 

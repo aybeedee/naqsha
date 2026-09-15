@@ -52,11 +52,24 @@ describe('urban geometry', () => {
     expect(geometry.getAttribute('position').count).toBe(6)
   })
 
-  it('styles severe shared road impact more strongly than an uncertain impact', () => {
+  it('keeps road depth colours consistent and leaves dry or missing samples uncoloured', () => {
     const fallback = new THREE.Color('#ffffff')
     const shared = roadImpactColour(400, 3, 3, fallback)
     const uncertain = roadImpactColour(400, 1, 3, fallback)
-    expect(shared.getHexString()).not.toBe(uncertain.getHexString())
+    expect(shared.getHexString()).toBe(uncertain.getHexString())
     expect(roadImpactColour(20, 0, 3, fallback).getHexString()).toBe('ffffff')
+    expect(roadImpactColour(65535, 255, 3, fallback).getHexString()).toBe('ffffff')
+  })
+
+  it('limits road overlays to segments meeting the active display threshold', () => {
+    const geometry = buildNetworkGeometry(
+      options,
+      new Uint16Array([200]),
+      new Uint8Array([3]),
+      3,
+      0.3,
+      true,
+    )
+    expect(geometry.getAttribute('position').count).toBe(0)
   })
 })

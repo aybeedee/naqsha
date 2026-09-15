@@ -173,9 +173,21 @@ export interface LineClass {
 
 export interface UrbanLabel {
   name: string
-  category: 'district' | 'road' | 'transit' | 'landmark' | 'education'
-    | 'healthcare' | 'worship' | 'government' | 'shopping' | 'food'
-    | 'hotel' | 'park' | 'sports' | 'building'
+  category:
+    | 'district'
+    | 'road'
+    | 'transit'
+    | 'landmark'
+    | 'education'
+    | 'healthcare'
+    | 'worship'
+    | 'government'
+    | 'shopping'
+    | 'food'
+    | 'hotel'
+    | 'park'
+    | 'sports'
+    | 'building'
   kind: string
   priority: number
   x: number

@@ -1,100 +1,105 @@
-# Experimental 3D viewer
+# Lahore flood explorer
 
-## Purpose
+The viewer presents an experimental flood scenario in Central Lahore and
+Gulberg–Liberty. Both areas have a precomputed example storm: 100 mm over two
+hours, then two hours without rain. It does not fetch live weather or run a
+solver in the browser.
 
-The viewer is a communication and model-diagnostics slice, not a public flood
-warning product. Its area catalog currently switches between central Lahore
-and Gulberg–Liberty; direct links can use `?area=<area-id>`. Each area displays
-the same precomputed synthetic storm. Its default **City** view combines a conditioned FABDEM ground
-surface, a time-varying ensemble-median depth display, public building footprints,
-the OSM street/infrastructure network, and recognizable place labels. A separate
-peak-envelope mode retains the maximum-depth diagnostic.
+The combined result uses FABDEM for the visible ground and the median of
+three terrain-model depths at each cell and time. Buildings use public
+footprints and estimated heights where measurements are missing. They are
+not hydraulic obstacles.
 
-The separate **Terrain agreement** layer answers a narrow question: for each model cell,
-how many of the Copernicus, FABDEM, and SRTM-family runs exceeded 10 cm maximum
-depth? Coral cells occur in only one terrain realization, amber in two, and
-teal in all three. A cell shown in one member is not a verified flooded place.
+## Using the explorer
 
-## Controls and guardrails
+- **Storm** explains the rainfall and shows flooded area, flagged road segments
+  and the wet fraction within 250 m of neighbourhood labels.
+- **Roads** ranks named roads by their highest sampled depth. Selecting a road
+  focuses on one of its flagged segments and highlights its mapped geometry.
+  Counts are whole flagged segments, not measured flooded length.
+- **Layers** contains the water threshold, city layers, agreement view and
+  individual terrain models. The same threshold applies to displayed water,
+  road flags, area totals and neighbourhood summaries.
+- Search finds local places and named roads. Arrow keys and Enter select a
+  result. `/` focuses search; Space plays or pauses outside form controls.
+- Clicking the map shows a cell estimate and optional model comparison.
+  Unavailable cells are distinguished from dry cells. Search results can lie
+  outside the analysed hydraulic mask and must not be reported as dry.
+- 2D creates a flat, north-up map. In 3D, orbit, zoom, pan, north and reset
+  change the camera. Water height exaggeration only changes the drawing.
+- Playback uses 25 saved solver frames, stops at the end, and can be replayed.
+  The rain band separates rainfall from the later recession period.
+- **Whole event** takes the maximum of each cell's saved depth sequence. For
+  the combined view this is the peak of the instantaneous medians, matching
+  the road export, rather than the median of independent model peaks. Those
+  quantities differ when terrain models peak at different times. Individual
+  solver maxima remain available in the location comparison; they can exceed
+  the sampled maxima between saved frames. Peaks are not simultaneous.
+- **Model agreement** counts terrain models exceeding 10 cm in their solver
+  event maxima. Coral represents one, amber two and green three. Agreement is
+  consistency, not probability or validation. FABDEM and Copernicus are
+  related products. Individual terrain views do not show combined road flags.
+- **Share view** copies the area, frame, dimension, result and threshold in the
+  URL. It does not save camera position or layer visibility.
+- Phones retain area selection, search, road results, legend and timeline.
+  The three panels open over the map as needed.
+- **About** explains the model, missing drainage, forecast limitations and
+  interpretation. Archived forecast metadata appears when present; expired
+  forecasts are marked. The checked-in examples are synthetic storms.
 
-- Orbit, zoom, pan, and reset affect only the camera.
-- The 2D switch creates a flat, north-up map; 3D restores building extrusion
-  and the ground surface at the selected vertical exaggeration.
-- Vertical exaggeration affects only rendering, never exported elevations or
-  depths.
-- The member-view depth slider hides values below a display threshold; it does
-  not rerun or rescale the model.
-- The flood timeline exposes 25 solver snapshots at 10-minute intervals. Play,
-  pause, and scrub select actual instantaneous SFINCS output; they do not
-  interpolate or synthesize water motion between frames.
-- Peak envelope is the maximum reached at each cell, not a claim that every
-  displayed cell peaks simultaneously.
-- Agreement is fixed at the precomputed 10 cm threshold. The browser does not
-  pretend it can recompute hydraulics from arbitrary rainfall inputs.
-- Scenario forcing is shown read-only, with the experimental warning and
-  evidence resolution always visible.
-- Buildings, network, labels, and flood depth can be hidden independently.
-- Map labels use category-specific markers, names, and subtypes. The checked
-  contexts contain 407 central-Lahore and 339 Gulberg–Liberty labels. Runtime
-  distance thresholds reveal more detail while zooming, and screen-space
-  collision filtering preserves a readable overview.
-- Road exposure colours and totals are computed for every hydraulic frame.
-  Named-road rankings aggregate OSM segments, while district summaries sample
-  a 250 m vicinity around map labels; neither is a safe-routing decision.
-- The optional OSM Carto basemap loads only the displayed AOI at one zoom.
-  Browser HTTP caching is respected; failure falls back to local vector data.
-- Three-dimensional flood areas have raised surfaces and darker perimeter
-  walls. Flood-height exaggeration is display-only, is disclosed in the
-  viewport, and never changes stored depths.
+## Rendering
 
-Building footprints and streets are real public map features, but nearly all
-building heights are an 8 m rendering proxy. Buildings are not yet hydraulic
-obstacles. The current slice intentionally has no parcel lookup, live forecast,
-known drainage network, surveyed kerbs, or authoritative imagery. Those
-additions should follow terrain and drainage calibration rather than making the
-experimental surface look more precise. Forecast metadata is displayed when a
-scenario was generated from an archived ensemble forcing.
+Water has a fixed colour scale at 0, 0.3, 1 and 2 m; its colour does not change
+meaning with the maximum depth of a frame. The displayed mesh is clipped at
+the threshold, rather than colouring an entire triangle when only one vertex
+is wet. This is visual interpolation of the coarse grid, not additional
+hydraulic resolution. Flood geometry includes perimeter walls.
+
+Buildings, streets, labels, road overlays and water have separate lifecycles.
+Changing a frame rebuilds water and enabled road overlays, leaving static
+geometry and label textures intact. Frames are drawn on demand, including
+camera damping; an idle map does not continuously redraw. Geometry and GPU
+resources are disposed on area changes and unmount.
+
+Labels use screen-sized text, category colours, distance thresholds and
+collision filtering. There are 407 Central Lahore and 339 Gulberg–Liberty
+labels. Basemap requests have timeouts and are cancelled when disabled.
+Missing tiles preserve the local map; graphics failures preserve the readable
+summaries. The graphics module loads separately from the interface.
 
 ## Browser data contract
 
-`python -m naqsha.web_export` writes a versioned `scenario.json` plus little-
-endian row-major grid files:
+`python -m naqsha.web_export` writes a versioned `scenario.json` and little-
+endian, row-major grids:
 
 | Asset | Encoding | Meaning |
 | --- | --- | --- |
-| `terrain-<member>.f32` | float32 metres | Model elevation for mesh vertices |
-| `depth-<member>.f32` | float32 metres | Maximum simulated water depth |
-| `timeline-depth-<member>.u16` | uint16 millimetres | 25 instantaneous depth frames |
-| `active.u8` | uint8 boolean | Cells shared by all terrain realizations |
+| `terrain-<member>.f32` | float32 metres | Model elevations |
+| `depth-<member>.f32` | float32 metres | Solver maximum depths |
+| `timeline-depth-<member>.u16` | uint16 millimetres | Instantaneous saved depths |
+| `active.u8` | uint8 boolean | Common analysed cells |
 | `wet-member-count.u8` | uint8 0–3; 255 nodata | Members exceeding 10 cm |
-| `road-impact-depth.u16` | uint16 millimetres | Median sampled road depth by frame |
-| `road-impact-agreement.u8` | uint8 0–3; 255 nodata | Terrain members exceeding 10 cm on each road |
+| `road-impact-depth.u16` | uint16 millimetres; 65535 nodata | Highest median sample per segment and frame |
+| `road-impact-agreement.u8` | uint8 0–3; 255 nodata | Models exceeding 10 cm somewhere along a segment |
 
-The manifest carries grid dimensions, CRS, affine transform, bounds, scenario
-forcing, timeline cadence and scale, member metrics, warning text, and solver
-provenance. The checked-in hydraulic scenario is about 3.6 MB, so a tile service
-is unnecessary at this scale.
+The manifest retains dimensions, CRS, transform, bounds, forcing, cadence,
+scale, metrics and provenance. The context assets contain footprint rings,
+height/source arrays, road geometry, names and prioritised labels. The loader
+checks array dimensions and the scenario/context identity before showing
+road results. A study area is roughly 5 MB, so no tile server is required.
 
-The parallel urban-context contract contains binary footprint rings, per-
-building height/source arrays, network polylines with class/width/name metadata,
-and prioritized map labels. Each context is about 1.3–1.5 MB. Its acquisition, interpretation limits,
-and ODbL obligations are documented in [the urban-context decision](urban-context.md).
+## Basemap
 
-`grid.geographicBounds` georeferences the optional browser basemap to the UTM
-terrain mesh. Rendered OSM tiles are not downloaded into or redistributed with
-the repository.
+The default template is `https://tile.openstreetmap.org/{z}/{x}/{y}.png`.
+`VITE_OSM_TILE_URL` can replace it at build time. The viewer requests at most
+36 tiles for the selected study area at one zoom, leaves browser HTTP caching
+intact and displays attribution. It does not download tiles for offline use
+or redistribute them in the repository. See the [OSM tile usage policy](https://operations.osmfoundation.org/policies/tiles/).
 
-## Live basemap policy
-
-The default template is `https://tile.openstreetmap.org/{z}/{x}/{y}.png`. It
-can be replaced at build time with `VITE_OSM_TILE_URL`; the URL is not used for
-offline prefetching. The viewer requests at most 36 tiles for this fixed AOI
-and one zoom, sends normal browser identification/referrer headers, leaves HTTP
-caching intact, and keeps attribution visible. This follows the
-[OpenStreetMap tile usage policy](https://operations.osmfoundation.org/policies/tiles/).
-
-Enabling the layer contacts OpenStreetMap's tile service from the user's
-browser. Disable **OSM basemap** to use only locally packaged context data.
+Geographic bounds cover cell edges; texture coordinates account for terrain
+vertices being cell centres. The projected-to-geographic drape is a bounded
+local approximation. Disable **OpenStreetMap basemap** to use packaged data
+alone. Building-source and OSM licence notes are in [urban context](urban-context.md).
 
 ## Run and verify
 
@@ -105,12 +110,12 @@ make web-build
 make web-dev
 ```
 
-For the containerized build:
+Open `http://localhost:5174`. A container build is available through
+`docker compose up --build viewer`. The production viewer is static; only
+the optional basemap uses an external runtime service.
 
-```bash
-docker compose up --build viewer
-```
-
-Then open `http://localhost:5174`. The static image serves the same precomputed
-assets through nginx; no Naqsha backend is required. Only the optional OSM
-basemap uses an external runtime service.
+Tests cover data loading against both shipped areas, median/peak ordering,
+threshold and nodata handling, search, shared links, playback, mobile control
+availability, location inspection, geometry and rendering lifecycle. DOM
+tests do not verify pixels, browser GPU drivers or responsive visual layout;
+those require a real-browser review.
