@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import * as THREE from 'three'
 import type { UrbanContextData } from './types'
-import { buildBuildingGeometry, buildNetworkGeometry, roadImpactColour } from './urbanGeometry'
+import {
+  buildBuildingGeometry,
+  buildBuildingEdges,
+  buildLandcoverGeometry,
+  buildNetworkGeometry,
+  elevationAt,
+  roadImpactColour,
+} from './urbanGeometry'
 
 const context = {
   metadata: {
@@ -40,6 +47,66 @@ const options = {
 }
 
 describe('urban geometry', () => {
+  it('interpolates display elevations on the actual terrain triangles', () => {
+    const surface = { ...options, terrain: new Float32Array([100, 110, 120, 130]) }
+    expect(elevationAt(0, 0, surface)).toBeCloseTo(15)
+    expect(elevationAt(-15, -15, surface)).toBe(0)
+    expect(elevationAt(15, 15, surface)).toBe(30)
+    expect(elevationAt(1000, 1000, surface)).toBe(0)
+  })
+  it('keeps roof outlines at the provided footprint and height', () => {
+    const geometry = buildBuildingEdges(options)
+    const positions = geometry.getAttribute('position')
+    expect(positions.count).toBe(8)
+    for (let i = 0; i < positions.count; i++) {
+      expect(Math.abs(positions.getX(i))).toBe(5)
+      expect(Math.abs(positions.getZ(i))).toBe(5)
+      expect(positions.getY(i)).toBeCloseTo(8.76)
+    }
+  })
+  it('preserves courtyards / inner rings when drawing mapped parks', () => {
+    const land = buildLandcoverGeometry({
+      ...options,
+      flat: true,
+      context: {
+        ...context,
+        metadata: {
+          ...context.metadata,
+          landcover: [
+            {
+              kind: 'park',
+              rings: [
+                [
+                  [-10, -10],
+                  [10, -10],
+                  [10, 10],
+                  [-10, 10],
+                  [-10, -10],
+                ],
+                [
+                  [-5, -5],
+                  [-5, 5],
+                  [5, 5],
+                  [5, -5],
+                  [-5, -5],
+                ],
+              ],
+            },
+          ],
+        },
+      },
+    })
+    const positions = land.getAttribute('position')
+    let area = 0
+    for (let i = 0; i < positions.count; i += 3) {
+      const ax = positions.getX(i + 1) - positions.getX(i),
+        az = positions.getZ(i + 1) - positions.getZ(i)
+      const bx = positions.getX(i + 2) - positions.getX(i),
+        bz = positions.getZ(i + 2) - positions.getZ(i)
+      area += Math.abs(ax * bz - az * bx) / 2
+    }
+    expect(area).toBeCloseTo(300)
+  })
   it('extrudes a building footprint', () => {
     const geometry = buildBuildingGeometry(options)
     expect(geometry.getAttribute('position').count).toBeGreaterThan(6)

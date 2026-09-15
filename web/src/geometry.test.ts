@@ -57,6 +57,12 @@ describe('grid geometry', () => {
       expect(positions.getX(i)).toBeLessThanOrEqual(0.00001)
       expect(positions.getZ(i)).toBeLessThanOrEqual(0.00001)
     }
+    const shore = geometry.userData.shoreline as Float32Array
+    expect(shore.length).toBe(18) // Only three exterior edges, not interior triangulation.
+    for (let i = 0; i < shore.length; i += 3) {
+      expect(shore[i]).toBeLessThanOrEqual(0.00001)
+      expect(shore[i + 2]).toBeLessThanOrEqual(0.00001)
+    }
   })
 
   it('uses fixed absolute colour stops across frames and clamps extreme depths', () => {

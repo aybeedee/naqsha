@@ -3,8 +3,16 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { loadOsmBasemapTexture } from './basemap'
 import { buildAgreementGeometry, buildTerrainGeometry, buildWaterGeometry } from './geometry'
-import { buildBuildingGeometry, buildNetworkGeometry, elevationAt } from './urbanGeometry'
-import type { Dimension, ScenarioData, UrbanContextData, UrbanLabel, ViewId } from './types'
+import {
+  buildBuildingGeometry,
+  buildBuildingEdges,
+  buildLandcoverGeometry,
+  buildNetworkGeometry,
+  elevationAt,
+} from './urbanGeometry'
+import { mapLabels, MapLabelRenderer } from './mapLabels'
+import type { MapLabel } from './mapLabels'
+import type { Dimension, ScenarioData, UrbanContextData, ViewId } from './types'
 import type { MapPlace } from './analysis'
 import type { MapAction } from './Explorer'
 
@@ -28,9 +36,15 @@ interface Props {
   action: MapAction
   focus: MapPlace | null
   selected: MapPlace | null
-  onSelect: (point: { x: number; z: number }) => void
+  onSelect: (point: {
+    x: number
+    z: number
+    name?: string
+    kind?: string
+    roadName?: string
+  }) => void
 }
-type GroupName = 'terrain' | 'water' | 'buildings' | 'network' | 'impacts' | 'labels' | 'selection'
+type GroupName = 'terrain' | 'water' | 'buildings' | 'network' | 'impacts' | 'selection'
 interface SceneState {
   scene: THREE.Scene
   camera: THREE.PerspectiveCamera
@@ -39,6 +53,8 @@ interface SceneState {
   groups: Record<GroupName, THREE.Group>
   frame: number
   invalidate: () => void
+  flyTo: (position: THREE.Vector3, target: THREE.Vector3) => void
+  stopMotion: () => void
 }
 
 function disposeGroup(group: THREE.Group): void {
@@ -59,6 +75,7 @@ function disposeGroup(group: THREE.Group): void {
 }
 
 function resetCamera(state: SceneState, data: ScenarioData, dimension: Dimension) {
+  state.stopMotion()
   const { camera, controls } = state
   const { extentWidthMetres: width, extentHeightMetres: height } = data.metadata.grid
   const fit =
@@ -72,68 +89,21 @@ function resetCamera(state: SceneState, data: ScenarioData, dimension: Dimension
     camera.position.set(0, distance, 0.01)
     controls.enableRotate = false
     controls.mouseButtons.LEFT = THREE.MOUSE.PAN
+    controls.mouseButtons.RIGHT = THREE.MOUSE.PAN
     controls.touches.ONE = THREE.TOUCH.PAN
   } else {
     controls.screenSpacePanning = false
     camera.up.set(0, 1, 0)
     camera.position.copy(new THREE.Vector3(0.22, 0.92, 0.7).normalize().multiplyScalar(distance))
     controls.enableRotate = true
-    controls.mouseButtons.LEFT = THREE.MOUSE.ROTATE
-    controls.touches.ONE = THREE.TOUCH.ROTATE
+    controls.mouseButtons.LEFT = THREE.MOUSE.PAN
+    controls.mouseButtons.RIGHT = THREE.MOUSE.ROTATE
+    controls.touches.ONE = THREE.TOUCH.PAN
   }
   controls.touches.TWO = THREE.TOUCH.DOLLY_PAN
   camera.lookAt(controls.target)
   controls.update()
   state.invalidate()
-}
-
-const labelColors: Partial<Record<UrbanLabel['category'], string>> = {
-  district: '#294b3e',
-  road: '#655c49',
-  healthcare: '#9c554c',
-  park: '#467850',
-  worship: '#7f6689',
-  education: '#466e88',
-  shopping: '#855d75',
-  transit: '#84683e',
-}
-function createLabel(label: UrbanLabel): THREE.Sprite {
-  const district = label.category === 'district'
-  const canvas = document.createElement('canvas')
-  const drawing = canvas.getContext('2d')!
-  const font = `${district ? 650 : 550} ${district ? 34 : 30}px -apple-system, BlinkMacSystemFont, sans-serif`
-  drawing.font = font
-  const text = label.name.length > 42 ? `${label.name.slice(0, 40)}…` : label.name
-  canvas.width = Math.ceil(Math.min(drawing.measureText(text).width, 600)) + 26
-  canvas.height = 52
-  drawing.font = font
-  drawing.textAlign = 'center'
-  drawing.textBaseline = 'middle'
-  drawing.lineJoin = 'round'
-  drawing.strokeStyle = '#fffffff0'
-  drawing.lineWidth = 7
-  drawing.strokeText(text, canvas.width / 2, 27, canvas.width - 20)
-  drawing.fillStyle = labelColors[label.category] ?? '#526653'
-  drawing.fillText(text, canvas.width / 2, 27, canvas.width - 20)
-  const texture = new THREE.CanvasTexture(canvas)
-  texture.colorSpace = THREE.SRGBColorSpace
-  const sprite = new THREE.Sprite(
-    new THREE.SpriteMaterial({
-      map: texture,
-      transparent: true,
-      depthTest: false,
-      depthWrite: false,
-      toneMapped: false,
-    }),
-  )
-  sprite.userData = {
-    pixelWidth: canvas.width / 2.4,
-    pixelHeight: canvas.height / 2.4,
-    priority: label.priority,
-    district,
-  }
-  sprite.renderOrder = 20
-  return sprite
 }
 
 export function TerrainScene(props: Props) {
@@ -161,6 +131,8 @@ export function TerrainScene(props: Props) {
   } = props
   const hostRef = useRef<HTMLDivElement>(null)
   const sceneRef = useRef<SceneState | null>(null)
+  const labelOptions = useRef({ showLabels, selected })
+  labelOptions.current = { showLabels, selected }
   const selectRef = useRef(onSelect)
   selectRef.current = onSelect
   const [texture, setTexture] = useState<THREE.CanvasTexture | null>(null)
@@ -213,16 +185,29 @@ export function TerrainScene(props: Props) {
     renderer.setSize(host.clientWidth, host.clientHeight, false)
     renderer.outputColorSpace = THREE.SRGBColorSpace
     renderer.toneMapping = THREE.ACESFilmicToneMapping
-    renderer.toneMappingExposure = 1.05
+    renderer.toneMappingExposure = 0.95
+    renderer.shadowMap.enabled = true
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap
+    renderer.shadowMap.autoUpdate = false
     renderer.domElement.setAttribute(
       'aria-label',
-      'Lahore flood map. Drag to move. Click to inspect a location.',
+      'Lahore flood map. Drag to pan, right-drag to orbit. Click a place name or the map to inspect.',
     )
     renderer.domElement.tabIndex = 0
     host.appendChild(renderer.domElement)
+    const labelCanvas = document.createElement('canvas')
+    labelCanvas.className = 'map-label-canvas'
+    labelCanvas.setAttribute('aria-hidden', 'true')
+    host.appendChild(labelCanvas)
+    const labels = new MapLabelRenderer(labelCanvas, mapLabels(context))
+    const scale = document.createElement('div')
+    scale.className = 'map-scale'
+    scale.title = 'Approximate scale at the centre of the view'
+    host.appendChild(scale)
+    let hovered: MapLabel | null = null
     const scene = new THREE.Scene()
-    scene.background = new THREE.Color('#e5ebe2')
-    scene.fog = new THREE.Fog('#e5ebe2', 18000, 34000)
+    scene.background = new THREE.Color('#101c25')
+    scene.fog = new THREE.Fog('#101c25', 14000, 28000)
     const camera = new THREE.PerspectiveCamera(
       38,
       host.clientWidth / Math.max(host.clientHeight, 1),
@@ -230,19 +215,36 @@ export function TerrainScene(props: Props) {
       45000,
     )
     const controls = new OrbitControls(camera, renderer.domElement)
-    controls.enableDamping = !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    controls.enableDamping = !reducedMotion
     controls.dampingFactor = 0.12
-    controls.minDistance = 180
+    controls.minDistance = 100
     controls.maxDistance = 22000
     controls.maxPolarAngle = Math.PI * 0.46
     controls.zoomToCursor = true
     controls.screenSpacePanning = false
-    scene.add(new THREE.HemisphereLight('#ffffff', '#899987', 2.0))
-    const sun = new THREE.DirectionalLight('#fffae7', 2.5)
-    sun.position.set(-2600, 4200, -1700)
+    scene.add(new THREE.HemisphereLight('#cbe2f2', '#17242a', 1.65))
+    const sun = new THREE.DirectionalLight('#ffefd3', 2.4)
+    sun.position.set(-2600, 3200, -1700)
+    sun.castShadow = true
+    sun.shadow.mapSize.set(2048, 2048)
+    const shadowExtent =
+      Math.max(data.metadata.grid.extentWidthMetres, data.metadata.grid.extentHeightMetres) * 0.72
+    Object.assign(sun.shadow.camera, {
+      left: -shadowExtent,
+      right: shadowExtent,
+      top: shadowExtent,
+      bottom: -shadowExtent,
+      near: 100,
+      far: 12000,
+    })
+    sun.shadow.camera.updateProjectionMatrix()
+    sun.shadow.normalBias = 1.2
+    sun.shadow.bias = -0.0001
+    sun.shadow.intensity = 0.45
     scene.add(sun)
     const groups = Object.fromEntries(
-      (['terrain', 'water', 'buildings', 'network', 'impacts', 'labels', 'selection'] as const).map(
+      (['terrain', 'water', 'buildings', 'network', 'impacts', 'selection'] as const).map(
         (name) => [name, new THREE.Group()],
       ),
     ) as Record<GroupName, THREE.Group>
@@ -255,74 +257,98 @@ export function TerrainScene(props: Props) {
       groups,
       frame: 0,
       invalidate: () => {},
+      flyTo: () => {},
+      stopMotion: () => {},
     }
-    const projected = new THREE.Vector3()
-    const cameraSpace = new THREE.Vector3()
+    let flight: {
+      position: THREE.Vector3
+      target: THREE.Vector3
+      to: THREE.Vector3
+      lookAt: THREE.Vector3
+      start: number
+    } | null = null
+    state.stopMotion = () => {
+      flight = null
+    }
+    controls.addEventListener('start', state.stopMotion)
+    state.flyTo = (position, target) => {
+      if (reducedMotion) {
+        camera.position.copy(position)
+        controls.target.copy(target)
+        controls.update()
+      } else
+        flight = {
+          position: camera.position.clone(),
+          target: controls.target.clone(),
+          to: position.clone(),
+          lookAt: target.clone(),
+          start: performance.now(),
+        }
+      state.invalidate()
+    }
     const render = () => {
       state.frame = 0
+      if (flight) {
+        const progress = Math.min(1, (performance.now() - flight.start) / 420)
+        const ease = 1 - (1 - progress) ** 3
+        camera.position.lerpVectors(flight.position, flight.to, ease)
+        controls.target.lerpVectors(flight.target, flight.lookAt, ease)
+        if (progress >= 1) flight = null
+        else state.invalidate()
+      }
       controls.update()
       camera.updateMatrixWorld()
-      const occupied: { left: number; right: number; top: number; bottom: number }[] = []
       const width = host.clientWidth
       const height = host.clientHeight
       const focal = height / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)))
       const marker = groups.selection.children.find((child) => child.userData.marker)
       if (marker)
         marker.scale.setScalar(((camera.position.distanceTo(marker.position) / focal) * 12) / 23)
-      for (const child of groups.labels.children as THREE.Sprite[]) {
-        cameraSpace.copy(child.position).applyMatrix4(camera.matrixWorldInverse)
-        const distance = -cameraSpace.z
-        const priority = child.userData.priority as number
-        const maxDistance =
-          priority >= 95
-            ? 22000
-            : priority >= 85
-              ? 13000
-              : priority >= 70
-                ? 8000
-                : priority >= 55
-                  ? 4500
-                  : 2300
-        projected.copy(child.position).project(camera)
-        if (
-          distance < 0 ||
-          distance > maxDistance ||
-          Math.abs(projected.x) > 1 ||
-          Math.abs(projected.y) > 1 ||
-          projected.z > 1
-        ) {
-          child.visible = false
-          continue
+      const rect = host.getBoundingClientRect()
+      const blocked = [
+        ...(host
+          .closest('.workspace')
+          ?.querySelectorAll(
+            '.map-caption,.map-tools,.selection-card,.legend,.navigation-hint,.map-view-options,.sidebar:not([hidden])',
+          ) ?? []),
+      ].map((element) => {
+        const b = element.getBoundingClientRect()
+        return {
+          left: b.left - rect.left - 5,
+          right: b.right - rect.left + 5,
+          top: b.top - rect.top - 5,
+          bottom: b.bottom - rect.top + 5,
         }
-        const pw = child.userData.pixelWidth as number
-        const ph = child.userData.pixelHeight as number
-        child.scale.set((pw * distance) / focal, (ph * distance) / focal, 1)
-        const x = ((projected.x + 1) * width) / 2
-        const y = ((1 - projected.y) * height) / 2
-        const box = {
-          left: x - pw / 2 - 4,
-          right: x + pw / 2 + 4,
-          top: y - ph / 2 - 3,
-          bottom: y + ph / 2 + 3,
-        }
-        const overlaps = occupied.some(
-          (other) =>
-            box.left < other.right &&
-            box.right > other.left &&
-            box.top < other.bottom &&
-            box.bottom > other.top,
-        )
-        child.visible =
-          !overlaps &&
-          box.left > 8 &&
-          box.right < width - 8 &&
-          box.top > 8 &&
-          box.bottom < height - 8 &&
-          !(box.top < 90 && box.left < 260) &&
-          !(box.right > width - 105 && box.top < 250) &&
-          !(box.bottom > height - 120 && box.left < 230)
-        if (child.visible) occupied.push(box)
-      }
+      })
+      blocked.push({ left: width - 130, right: width, top: height - 40, bottom: height })
+      const s = surface.current
+      labels.draw(
+        camera,
+        width,
+        height,
+        (x, z) =>
+          elevationAt(x, z, {
+            grid: data.metadata.grid,
+            terrain: s.member.terrain,
+            terrainMinimum: s.member.terrainMinimumMetres,
+            verticalExaggeration: s.exaggeration,
+            flat: s.dimension === '2d',
+          }),
+        blocked,
+        labelOptions.current.showLabels,
+        hovered,
+        labelOptions.current.selected,
+      )
+      const metresPerPixel = camera.position.distanceTo(controls.target) / focal
+      const power = 10 ** Math.floor(Math.log10(metresPerPixel * 100))
+      const length = [5, 2, 1].map((v) => v * power).find((v) => v / metresPerPixel <= 110) ?? power
+      scale.textContent = length >= 1000 ? `${length / 1000} km` : `${length} m`
+      scale.style.width = `${length / metresPerPixel}px`
+      const bearing = Math.atan2(
+        camera.position.x - controls.target.x,
+        camera.position.z - controls.target.z,
+      )
+      host.parentElement?.style.setProperty('--bearing', `${-bearing}rad`)
       renderer.render(scene, camera)
     }
     state.invalidate = () => {
@@ -346,6 +372,7 @@ export function TerrainScene(props: Props) {
     let dragged = false
     let primaryPointer = -1
     const down = (event: PointerEvent) => {
+      flight = null
       if (!event.isPrimary) {
         dragged = true
         return
@@ -357,10 +384,30 @@ export function TerrainScene(props: Props) {
     const move = (event: PointerEvent) => {
       if (Math.hypot(event.clientX - pointerStart.x, event.clientY - pointerStart.y) > 5)
         dragged = true
+      if (event.buttons) return
+      const bounds = renderer.domElement.getBoundingClientRect()
+      const next = labels.hit(event.clientX - bounds.left, event.clientY - bounds.top)
+      if (next !== hovered) {
+        hovered = next
+        renderer.domElement.style.cursor = hovered ? 'pointer' : 'grab'
+        renderer.domElement.title = hovered ? `${hovered.name} · ${hovered.kind}` : ''
+        state.invalidate()
+      }
     }
     const up = (event: PointerEvent) => {
       if (dragged || event.pointerId !== primaryPointer) return
       const bounds = renderer.domElement.getBoundingClientRect()
+      const label = labels.hit(event.clientX - bounds.left, event.clientY - bounds.top)
+      if (label) {
+        selectRef.current({
+          x: label.x,
+          z: label.z,
+          name: label.name,
+          kind: label.kind,
+          roadName: label.roadName,
+        })
+        return
+      }
       raycaster.setFromCamera(
         new THREE.Vector2(
           ((event.clientX - bounds.left) / bounds.width) * 2 - 1,
@@ -368,7 +415,9 @@ export function TerrainScene(props: Props) {
         ),
         camera,
       )
-      const hit = raycaster.intersectObjects(groups.terrain.children)[0]
+      const hit = raycaster.intersectObjects(
+        groups.terrain.children.filter((child) => child instanceof THREE.Mesh),
+      )[0]
       if (hit) selectRef.current({ x: hit.point.x, z: hit.point.z })
     }
     const lost = (event: Event) => {
@@ -396,8 +445,11 @@ export function TerrainScene(props: Props) {
       renderer.domElement.removeEventListener('webglcontextlost', lost)
       renderer.domElement.removeEventListener('webglcontextrestored', restored)
       Object.values(groups).forEach(disposeGroup)
+      sun.shadow.map?.dispose()
       renderer.dispose()
       renderer.domElement.remove()
+      labelCanvas.remove()
+      scale.remove()
       sceneRef.current = null
     }
   }, [data, context])
@@ -418,16 +470,56 @@ export function TerrainScene(props: Props) {
     const mesh = new THREE.Mesh(
       geometry,
       new THREE.MeshStandardMaterial({
-        color: mapped ? '#ffffff' : '#bfcdb6',
+        color: mapped || view !== 'city' ? '#ffffff' : '#1e3038',
         vertexColors: !mapped && view !== 'city',
         map: mapped,
         roughness: 1,
         side: THREE.DoubleSide,
       }),
     )
+    mesh.receiveShadow = true
     state.groups.terrain.add(mesh)
+    // A quiet, explicit study boundary; outside this area no result is implied.
+    const grid = data.metadata.grid
+    const boundary: THREE.Vector3[] = []
+    const halfX = ((grid.width - 1) * grid.cellSizeMetres) / 2
+    const halfZ = ((grid.height - 1) * grid.cellSizeMetres) / 2
+    for (const [x, z] of [
+      [-halfX, -halfZ],
+      [halfX, -halfZ],
+      [halfX, halfZ],
+      [-halfX, halfZ],
+      [-halfX, -halfZ],
+    ])
+      boundary.push(
+        new THREE.Vector3(
+          x,
+          elevationAt(x, z, {
+            grid,
+            terrain: member.terrain,
+            terrainMinimum: member.terrainMinimumMetres,
+            verticalExaggeration: exaggeration,
+            flat: dimension === '2d',
+          }) + 2,
+          z,
+        ),
+      )
+    const line = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(boundary),
+      new THREE.LineDashedMaterial({
+        color: '#668b92',
+        transparent: true,
+        opacity: 0.55,
+        dashSize: 24,
+        gapSize: 16,
+        toneMapped: false,
+      }),
+    )
+    line.computeLineDistances()
+    state.groups.terrain.add(line)
+    state.renderer.shadowMap.needsUpdate = true
     state.invalidate()
-  }, [data, member, exaggeration, texture, showBasemap, view])
+  }, [data, member, exaggeration, texture, showBasemap, view, dimension])
 
   useEffect(() => {
     const state = sceneRef.current
@@ -461,6 +553,22 @@ export function TerrainScene(props: Props) {
       )
       mesh.renderOrder = 5
       state.groups.water.add(mesh)
+      if (view !== 'agreement' && geometry.userData.shoreline?.length) {
+        const shore = new THREE.BufferGeometry()
+        shore.setAttribute('position', new THREE.BufferAttribute(geometry.userData.shoreline, 3))
+        const outline = new THREE.LineSegments(
+          shore,
+          new THREE.LineBasicMaterial({
+            color: '#b5e6eb',
+            transparent: true,
+            opacity: 0.32,
+            depthWrite: false,
+            toneMapped: false,
+          }),
+        )
+        outline.renderOrder = 6
+        state.groups.water.add(outline)
+      }
     }
     state.invalidate()
   }, [
@@ -489,17 +597,36 @@ export function TerrainScene(props: Props) {
         verticalExaggeration: exaggeration,
         flat: dimension === '2d',
       })
-      state.groups.buildings.add(
-        new THREE.Mesh(
-          geometry,
-          new THREE.MeshStandardMaterial({
-            vertexColors: true,
-            roughness: 0.95,
-            side: THREE.DoubleSide,
-          }),
-        ),
+      const mesh = new THREE.Mesh(
+        geometry,
+        new THREE.MeshStandardMaterial({
+          vertexColors: true,
+          roughness: 0.84,
+          side: THREE.DoubleSide,
+        }),
       )
+      mesh.castShadow = dimension === '3d'
+      mesh.receiveShadow = true
+      state.groups.buildings.add(mesh)
+      const edges = new THREE.LineSegments(
+        buildBuildingEdges({
+          context,
+          grid: data.metadata.grid,
+          terrain: member.terrain,
+          terrainMinimum: member.terrainMinimumMetres,
+          verticalExaggeration: exaggeration,
+          flat: dimension === '2d',
+        }),
+        new THREE.LineBasicMaterial({
+          color: '#99b1b4',
+          transparent: true,
+          opacity: dimension === '2d' ? 0.22 : 0.3,
+          toneMapped: false,
+        }),
+      )
+      state.groups.buildings.add(edges)
     }
+    state.renderer.shadowMap.needsUpdate = true
     state.invalidate()
   }, [data, context, member, exaggeration, dimension, showBuildings])
 
@@ -508,14 +635,15 @@ export function TerrainScene(props: Props) {
     if (!state) return
     disposeGroup(state.groups.network)
     if (showNetwork) {
-      const geometry = buildNetworkGeometry({
+      const options = {
         context,
         grid: data.metadata.grid,
         terrain: member.terrain,
         terrainMinimum: member.terrainMinimumMetres,
         verticalExaggeration: exaggeration,
         flat: dimension === '2d',
-      })
+      }
+      const geometry = buildNetworkGeometry(options)
       const mesh = new THREE.Mesh(
         geometry,
         new THREE.MeshBasicMaterial({
@@ -526,6 +654,25 @@ export function TerrainScene(props: Props) {
       )
       mesh.renderOrder = 3
       state.groups.network.add(mesh)
+      const casing = new THREE.Mesh(
+        buildNetworkGeometry(options, undefined, undefined, 3, 0.05, false, true),
+        new THREE.MeshBasicMaterial({
+          vertexColors: true,
+          side: THREE.DoubleSide,
+          toneMapped: false,
+        }),
+      )
+      casing.renderOrder = 2
+      const land = new THREE.Mesh(
+        buildLandcoverGeometry(options),
+        new THREE.MeshBasicMaterial({
+          vertexColors: true,
+          side: THREE.DoubleSide,
+          toneMapped: false,
+        }),
+      )
+      land.renderOrder = 1
+      state.groups.network.add(casing, land)
     }
     state.invalidate()
   }, [data, context, member, exaggeration, dimension, showNetwork])
@@ -579,25 +726,8 @@ export function TerrainScene(props: Props) {
   ])
 
   useEffect(() => {
-    const state = sceneRef.current
-    if (!state) return
-    disposeGroup(state.groups.labels)
-    if (showLabels) {
-      for (const label of [...context.metadata.labels].sort((a, b) => b.priority - a.priority)) {
-        const sprite = createLabel(label)
-        const y = elevationAt(label.x, label.z, {
-          grid: data.metadata.grid,
-          terrain: member.terrain,
-          terrainMinimum: member.terrainMinimumMetres,
-          verticalExaggeration: exaggeration,
-          flat: dimension === '2d',
-        })
-        sprite.position.set(label.x, y + (dimension === '2d' ? 8 : 22), label.z)
-        state.groups.labels.add(sprite)
-      }
-    }
-    state.invalidate()
-  }, [data, context, member, exaggeration, dimension, showLabels])
+    sceneRef.current?.invalidate()
+  }, [showLabels])
 
   useEffect(() => {
     const state = sceneRef.current
@@ -614,7 +744,7 @@ export function TerrainScene(props: Props) {
       const ring = new THREE.Mesh(
         new THREE.RingGeometry(17, 23, 48),
         new THREE.MeshBasicMaterial({
-          color: '#224f42',
+          color: '#e6d08f',
           side: THREE.DoubleSide,
           depthTest: false,
           toneMapped: false,
@@ -641,7 +771,7 @@ export function TerrainScene(props: Props) {
         })
         const line = new THREE.LineSegments(
           new THREE.BufferGeometry().setFromPoints(points),
-          new THREE.LineBasicMaterial({ color: '#254e3d', depthTest: false, toneMapped: false }),
+          new THREE.LineBasicMaterial({ color: '#f1d993', depthTest: false, toneMapped: false }),
         )
         line.renderOrder = 18
         state.groups.selection.add(line)
@@ -660,9 +790,10 @@ export function TerrainScene(props: Props) {
     if (action.type === 'reset') resetCamera(state, data, dimension)
     else if (action.type === 'north') {
       const delta = camera.position.clone().sub(controls.target)
-      camera.position
-        .copy(controls.target)
-        .add(new THREE.Vector3(0, delta.y, Math.hypot(delta.x, delta.z)))
+      state.flyTo(
+        controls.target.clone().add(new THREE.Vector3(0, delta.y, Math.hypot(delta.x, delta.z))),
+        controls.target,
+      )
     } else {
       const delta = camera.position.clone().sub(controls.target)
       const distance = THREE.MathUtils.clamp(
@@ -670,7 +801,7 @@ export function TerrainScene(props: Props) {
         controls.minDistance,
         controls.maxDistance,
       )
-      camera.position.copy(controls.target).add(delta.setLength(distance))
+      state.flyTo(controls.target.clone().add(delta.setLength(distance)), controls.target)
     }
     controls.update()
     state.invalidate()
@@ -693,10 +824,8 @@ export function TerrainScene(props: Props) {
       verticalExaggeration: ex,
       flat: dim === '2d',
     })
-    controls.target.set(focus.x, y, focus.z)
-    camera.position.copy(controls.target).add(offset)
-    controls.update()
-    state.invalidate()
+    const target = new THREE.Vector3(focus.x, y, focus.z)
+    state.flyTo(target.clone().add(offset), target)
   }, [focus, data])
 
   return (

@@ -7,6 +7,7 @@ export interface MapPlace {
   x: number
   z: number
   roadName?: string
+  aliases?: string[]
 }
 
 export function formatDepth(metres: number): string {
@@ -66,7 +67,8 @@ export function buildPlaces(context: UrbanContextData): MapPlace[] {
   const used = new Set<string>()
   const labels = [...context.metadata.labels].sort((a, b) => b.priority - a.priority)
   for (const label of labels) {
-    const key = `${label.name.trim().toLocaleLowerCase()}:${label.category}`
+    if (label.category === 'road') continue // Search uses the actual network below.
+    const key = `${label.name.trim().toLocaleLowerCase()}:${Math.round(label.x / 25)}:${Math.round(label.z / 25)}`
     if (!label.name.trim() || used.has(key)) continue
     used.add(key)
     places.push({
@@ -75,31 +77,41 @@ export function buildPlaces(context: UrbanContextData): MapPlace[] {
       kind: label.category === 'district' ? 'Neighbourhood' : label.kind.replaceAll('_', ' '),
       x: label.x,
       z: label.z,
+      aliases: label.aliases,
     })
   }
-  const roads = new Map<string, { name: string; x: number; z: number; count: number }>()
+  const roads = new Map<string, { name: string; x: number; z: number; length: number }>()
   context.networkNames?.forEach((name, line) => {
     if (!name.trim() || context.networkIndex[line * 3 + 2] > 6) return
     const key = name.trim().toLocaleLowerCase()
-    const road = roads.get(key) ?? { name: name.trim(), x: 0, z: 0, count: 0 }
     const offset = context.networkIndex[line * 3]
     const length = context.networkIndex[line * 3 + 1]
-    for (let i = offset; i < offset + length; i += 1) {
-      road.x += context.networkCoordinates[i * 2]
-      road.z += context.networkCoordinates[i * 2 + 1]
-      road.count += 1
+    let longest = 0
+    let x = 0
+    let z = 0
+    for (let i = offset; i < offset + length - 1; i += 1) {
+      const x1 = context.networkCoordinates[i * 2]
+      const z1 = context.networkCoordinates[i * 2 + 1]
+      const x2 = context.networkCoordinates[i * 2 + 2]
+      const z2 = context.networkCoordinates[i * 2 + 3]
+      const segment = Math.hypot(x2 - x1, z2 - z1)
+      if (segment > longest) {
+        longest = segment
+        x = (x1 + x2) / 2
+        z = (z1 + z2) / 2
+      }
     }
-    roads.set(key, road)
+    if (longest > (roads.get(key)?.length ?? 0))
+      roads.set(key, { name: name.trim(), x, z, length: longest })
   })
   for (const road of roads.values()) {
-    if (!road.count) continue
     places.push({
       id: `road:${road.name}`,
       name: road.name,
       kind: 'Road',
       roadName: road.name,
-      x: road.x / road.count,
-      z: road.z / road.count,
+      x: road.x,
+      z: road.z,
     })
   }
   return places
@@ -109,7 +121,11 @@ export function searchPlaces(places: MapPlace[], query: string): MapPlace[] {
   const text = query.normalize('NFKC').trim().toLocaleLowerCase()
   if (!text) return places.filter((place) => place.kind !== 'Road').slice(0, 6)
   return places
-    .filter((place) => place.name.normalize('NFKC').toLocaleLowerCase().includes(text))
+    .filter((place) =>
+      [place.name, ...(place.aliases ?? [])].some((name) =>
+        name.normalize('NFKC').toLocaleLowerCase().includes(text),
+      ),
+    )
     .sort(
       (a, b) =>
         Number(b.name.toLocaleLowerCase().startsWith(text)) -

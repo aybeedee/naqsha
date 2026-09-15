@@ -3,7 +3,27 @@ from pathlib import Path
 
 import numpy as np
 
-from naqsha.urban_context import export_urban_context
+from naqsha.urban_context import _declutter_labels, _label_category, export_urban_context
+
+
+def test_labels_keep_dense_places_and_distinct_branches():
+    labels = [
+        {"name": f"Shop {i}", "category": "shopping", "priority": 46, "x": i, "z": 0}
+        for i in range(100)
+    ]
+    labels.extend(
+        [
+            {"name": "Branch", "category": "shopping", "priority": 46, "x": 0, "z": 0},
+            {"name": "Branch", "category": "building", "priority": 48, "x": 10, "z": 0},
+            {"name": "Branch", "category": "shopping", "priority": 46, "x": 200, "z": 0},
+        ]
+    )
+    assert len(_declutter_labels(labels)) == 102
+    assert _label_category({"name": "Named Building", "building": "yes"}) == (
+        "building",
+        48,
+        "Building",
+    )
 
 
 def _write(path: Path, payload: dict) -> Path:
@@ -89,8 +109,15 @@ def test_context_export_encodes_buildings_network_and_labels(tmp_path: Path):
         "road": 1,
         "shopping": 1,
     }
-    assert next(label for label in payload["labels"] if label["name"] == "Test Hospital")[
-        "kind"
-    ] == "Hospital"
-    assert np.frombuffer((output / "buildings.height.f32").read_bytes(), dtype="<f4").tolist() == [12]
-    assert np.frombuffer((output / "network.index.u32").read_bytes(), dtype="<u4").tolist() == [0, 2, 1]
+    assert (
+        next(label for label in payload["labels"] if label["name"] == "Test Hospital")["kind"]
+        == "Hospital"
+    )
+    assert np.frombuffer((output / "buildings.height.f32").read_bytes(), dtype="<f4").tolist() == [
+        12
+    ]
+    assert np.frombuffer((output / "network.index.u32").read_bytes(), dtype="<u4").tolist() == [
+        0,
+        2,
+        1,
+    ]

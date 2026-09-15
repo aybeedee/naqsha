@@ -68,7 +68,7 @@ export function Explorer({
   const [playing, setPlaying] = useState(false)
   const [threshold, setThreshold] = useState(initial.threshold)
   const [panel, setPanel] = useState<Panel>('storm')
-  const [panelOpen, setPanelOpen] = useState(() => window.innerWidth > 760)
+  const [panelOpen, setPanelOpen] = useState(false)
   const [layers, setLayers] = useState({
     buildings: true,
     network: true,
@@ -773,6 +773,27 @@ export function Explorer({
                   : data.members.find((member) => member.id === view)?.label}
               {!layers.water ? ' · Water hidden' : ''}
             </small>
+            <small className="scenario-caption">
+              {forcing
+                ? forecastExpired
+                  ? 'Archived forecast · expired'
+                  : 'Forecast scenario · not live'
+                : `${scenario.rainfall_total_mm} mm example storm · not a live forecast`}
+            </small>
+          </div>
+          <div className="map-view-options" role="group" aria-label="Quick map layers">
+            <button
+              aria-pressed={layers.water}
+              onClick={() => setLayers((current) => ({ ...current, water: !current.water }))}
+            >
+              Water
+            </button>
+            <button
+              aria-pressed={layers.labels}
+              onClick={() => setLayers((current) => ({ ...current, labels: !current.labels }))}
+            >
+              Places
+            </button>
           </div>
           <div className="map-tools">
             <div className="dimension-switch" role="group" aria-label="Map dimension">
@@ -937,9 +958,7 @@ export function Explorer({
             <span className="navigation-hint">
               {dimension === '2d'
                 ? 'Drag to pan · Scroll to zoom'
-                : 'Drag to orbit · Right-drag to pan'}
-              <br />
-              Click the map to inspect
+                : 'Drag to pan · Right-drag to orbit'}
             </span>
           </div>
         </section>

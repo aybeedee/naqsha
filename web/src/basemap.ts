@@ -99,6 +99,18 @@ export async function loadOsmBasemapTexture(
     }
   }
   await Promise.all(requests)
+  // A muted night underlay. Public street/building geometry and vector labels
+  // provide the foreground; no new imagery or remote tile service is introduced.
+  const pixels = drawing.getImageData(0, 0, canvas.width, canvas.height)
+  for (let i = 0; i < pixels.data.length; i += 4) {
+    const luma =
+      (pixels.data[i] * 0.2126 + pixels.data[i + 1] * 0.7152 + pixels.data[i + 2] * 0.0722) / 255
+    const detail = (1 - luma) * 42
+    pixels.data[i] = 22 + detail
+    pixels.data[i + 1] = 34 + detail
+    pixels.data[i + 2] = 43 + detail
+  }
+  drawing.putImageData(pixels, 0, 0)
   const texture = new THREE.CanvasTexture(canvas)
   texture.colorSpace = THREE.SRGBColorSpace
   texture.minFilter = THREE.LinearMipmapLinearFilter

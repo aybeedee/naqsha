@@ -65,12 +65,27 @@ describe('explorer interactions', () => {
   it('makes the example storm explicit and keeps controls out of the default panel', async () => {
     await mount()
     const panel = container.querySelector('aside')!
+    expect(panel.hidden).toBe(true)
+    expect(container.querySelector('.scenario-caption')?.textContent).toContain(
+      'not a live forecast',
+    )
+    await click('Storm')
+    expect(panel.hidden).toBe(false)
     expect(panel.textContent).toContain('Simulated storm · not a live forecast')
     expect(panel.textContent).toContain('Road segments flagged')
     expect(panel.querySelectorAll('input').length).toBe(0)
     expect(container.querySelector('input[type="range"]')?.getAttribute('aria-label')).toBe(
       'Time since rainfall began',
     )
+  })
+  it('lets the city be revealed without opening a settings panel', async () => {
+    await mount()
+    const water = container.querySelector('.map-view-options button')!
+    expect(water.getAttribute('aria-pressed')).toBe('true')
+    await act(async () => (water as HTMLButtonElement).click())
+    expect(water.getAttribute('aria-pressed')).toBe('false')
+    expect(container.querySelector('aside')?.hidden).toBe(true)
+    expect(container.querySelector('.map-caption')?.textContent).toContain('Water hidden')
   })
   it('stops at the final frame and replays from the beginning', async () => {
     vi.useFakeTimers()

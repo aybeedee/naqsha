@@ -47,6 +47,17 @@ describe('depth interpretation', () => {
 })
 
 describe('places and road exposure', () => {
+  it('retains separate branches and searches original-language aliases', () => {
+    const context = smallContext()
+    const original = context.metadata.labels[0]
+    context.metadata.labels = [
+      { ...original, name: 'Branch', aliases: ['لاہور'], x: 0, z: 0 },
+      { ...original, name: 'Branch', x: 400, z: 0 },
+    ]
+    const places = buildPlaces(context)
+    expect(searchPlaces(places, 'branch')).toHaveLength(2)
+    expect(searchPlaces(places, 'لاہور')[0].x).toBe(0)
+  })
   it('ranks named roads by depth and ignores unavailable samples', () => {
     const result = roadSummary(smallScenario(), smallContext(), 2, false, 0.3)
     expect(result.segments).toBe(2)

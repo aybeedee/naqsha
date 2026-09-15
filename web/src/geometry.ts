@@ -28,8 +28,8 @@ interface BoundaryEdge {
   colorFor: (index: number) => THREE.Color
 }
 
-const terrainLow = new THREE.Color('#b7c9b0')
-const terrainHigh = new THREE.Color('#d7cdb3')
+const terrainLow = new THREE.Color('#203c40')
+const terrainHigh = new THREE.Color('#645d49')
 const waterStops = [0, 0.3, 1, 2]
 const waterColors = ['#90cee0', '#48a4c8', '#236ca1', '#173a6b'].map((hex) => new THREE.Color(hex))
 export function waterColor(depth: number): THREE.Color {
@@ -236,6 +236,7 @@ export function buildWaterGeometry(
   )
   type Vertex = { key: string; x: number; z: number; base: number; top: number; depth: number }
   const points = new Map<number, Vertex>()
+  const shoreline: number[] = []
   const edges = new Map<string, { first: Vertex; second: Vertex; count: number }>()
   const vertexAt = (index: number): Vertex => {
     let point = points.get(index)
@@ -318,6 +319,8 @@ export function buildWaterGeometry(
   }
   for (const edge of edges.values()) {
     if (edge.count !== 1) continue
+    for (const point of [edge.first, edge.second])
+      shoreline.push(point.x, point.top + 0.03, point.z)
     append(edge.first, true)
     append(edge.second, true)
     append(edge.first)
@@ -325,7 +328,9 @@ export function buildWaterGeometry(
     append(edge.second, true)
     append(edge.second)
   }
-  return finishGeometry(vertices, colors)
+  const geometry = finishGeometry(vertices, colors)
+  geometry.userData.shoreline = new Float32Array(shoreline)
+  return geometry
 }
 
 export function buildAgreementGeometry(

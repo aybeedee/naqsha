@@ -12,6 +12,9 @@ not hydraulic obstacles.
 
 ## Using the explorer
 
+The dark map opens full-width; panels stay closed until needed. **Water** and
+**Places** on the map toggle those layers without opening settings.
+
 - **Storm** explains the rainfall and shows flooded area, flagged road segments
   and the wet fraction within 250 m of neighbourhood labels.
 - **Roads** ranks named roads by their highest sampled depth. Selecting a road
@@ -20,13 +23,18 @@ not hydraulic obstacles.
 - **Layers** contains the water threshold, city layers, agreement view and
   individual terrain models. The same threshold applies to displayed water,
   road flags, area totals and neighbourhood summaries.
-- Search finds local places and named roads. Arrow keys and Enter select a
+- Search finds local places, supplied Urdu/alternate names and named roads. Separate
+  branches of the same business remain searchable. Arrow keys and Enter select a
   result. `/` focuses search; Space plays or pauses outside form controls.
-- Clicking the map shows a cell estimate and optional model comparison.
+- Clicking a label or its dot inspects that named place; clicking bare ground shows
+  a cell estimate and optional model comparison.
   Unavailable cells are distinguished from dry cells. Search results can lie
   outside the analysed hydraulic mask and must not be reported as dry.
-- 2D creates a flat, north-up map. In 3D, orbit, zoom, pan, north and reset
-  change the camera. Water height exaggeration only changes the drawing.
+- Drag to pan in both views. Right-drag orbits in 3D. Search and zoom controls
+  move the camera smoothly unless reduced motion is requested. North rotates the
+  map back; the compass follows the current bearing. The scale bar is approximate
+  at the centre of the view, not everywhere in an oblique perspective.
+- 2D creates a flat, north-up map. Water height exaggeration only changes the drawing.
 - Playback uses 25 saved solver frames, stops at the end, and can be replayed.
   The rain band separates rainfall from the later recession period.
 - **Whole event** takes the maximum of each cell's saved depth sequence. For
@@ -53,17 +61,32 @@ Water has a fixed colour scale at 0, 0.3, 1 and 2 m; its colour does not change
 meaning with the maximum depth of a frame. The displayed mesh is clipped at
 the threshold, rather than colouring an entire triangle when only one vertex
 is wet. This is visual interpolation of the coarse grid, not additional
-hydraulic resolution. Flood geometry includes perimeter walls.
+hydraulic resolution. Flood geometry includes perimeter walls and a subtle edge
+following that same clipped surface. No waves or flow vectors are invented.
+
+Buildings have distinct roofs, darker walls, footprint-following roof outlines and
+soft directional shadows. Heights and footprints have not changed. Shadows are a
+visual depth cue, not a sun-position or surveyed-height calculation. Roads have
+dark casings and a hierarchy of widths/colours. Mapped park and permanent-water
+polygons retain inner rings and are draped over the visual terrain. None of these
+visual improvements alter the hydraulic grids or road samples.
 
 Buildings, streets, labels, road overlays and water have separate lifecycles.
 Changing a frame rebuilds water and enabled road overlays, leaving static
-geometry and label textures intact. Frames are drawn on demand, including
+geometry intact. Labels use one screen-space canvas instead of one GPU sprite per
+place. Frames are drawn on demand, including
 camera damping; an idle map does not continuously redraw. Geometry and GPU
 resources are disposed on area changes and unmount.
 
-Labels use screen-sized text, category colours, distance thresholds and
-collision filtering. There are 407 Central Lahore and 339 Gulberg–Liberty
-labels. Basemap requests have timeouts and are cancelled when disabled.
+There are 1,127 Central Lahore and 1,057 Gulberg–Liberty labels from the existing
+public extracts. The exporter no longer drops nearby businesses or imposes category
+quotas. The map repeats road names along real street segments; text rotates with
+the streets. Small place labels try four positions, avoid actual UI bounds and
+other names, and leave hoverable/clickable dots when text cannot fit. Names remain
+available in search regardless of visibility. Not all 2,184 names can be readable
+at once, and unnamed buildings are not given fabricated labels.
+
+Basemap requests have timeouts and are cancelled when disabled.
 Missing tiles preserve the local map; graphics failures preserve the readable
 summaries. The graphics module loads separately from the interface.
 
@@ -93,7 +116,8 @@ road results. A study area is roughly 5 MB, so no tile server is required.
 The default template is `https://tile.openstreetmap.org/{z}/{x}/{y}.png`.
 `VITE_OSM_TILE_URL` can replace it at build time. The viewer requests at most
 36 tiles for the selected study area at one zoom, leaves browser HTTP caching
-intact and displays attribution. It does not download tiles for offline use
+intact and displays attribution. The raster is muted into a night palette beneath
+the foreground vectors. It does not download tiles for offline use
 or redistribute them in the repository. See the [OSM tile usage policy](https://operations.osmfoundation.org/policies/tiles/).
 
 Geographic bounds cover cell edges; texture coordinates account for terrain

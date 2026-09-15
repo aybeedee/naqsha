@@ -173,6 +173,8 @@ export interface LineClass {
 
 export interface UrbanLabel {
   name: string
+  aliases?: string[]
+  source?: string
   category:
     | 'district'
     | 'road'
@@ -218,6 +220,7 @@ export interface UrbanContextMetadata {
     classes: LineClass[]
   }
   labels: UrbanLabel[]
+  landcover?: { kind: 'park' | 'water'; rings: number[][][] }[]
   labelCounts?: Record<string, number>
   provenance: {
     overtureRelease: string

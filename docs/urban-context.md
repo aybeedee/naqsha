@@ -4,14 +4,14 @@
 
 Use a frozen, local vector extract instead of a live third-party basemap for
 the first recognizable city view. The 4 × 4 km AOI is small enough to deliver
-each processed context in about 1.3–1.5 MB while the viewer remains usable
+each processed context in about 1.5–1.7 MB while the viewer remains usable
 offline.
 
 The central extract combines:
 
 - **Overture Buildings** for footprint completeness: 19,329 clipped features;
 - **OpenStreetMap** for 3,918 road, rail, waterway, and park-boundary segments;
-- **OpenStreetMap names** for 407 retained map labels spanning districts,
+- **OpenStreetMap and Overture names** for 1,127 retained map labels spanning districts,
   roads, transit, landmarks, education, healthcare, worship, government,
   shopping, food, hotels, parks, sports, and named buildings.
 
@@ -22,7 +22,7 @@ contains ML-derived roofprints; false positives, omissions, and outdated
 features remain possible.
 
 The Gulberg–Liberty expansion extract adds 24,332 footprints, 2,529 network
-segments, and 339 retained map labels.
+segments, and 1,057 retained map labels.
 Of those buildings, 622 have a tagged height/floor-derived height and
 23,710 use the same 8 m visual proxy. Both contexts now retain a per-segment OSM
 name array so hydraulic exposure can be aggregated into named-road rankings.
@@ -46,6 +46,13 @@ projects the source geometry into UTM zone 43N, clips it to the hydraulic grid,
 simplifies outlines by 0.8 m, and accepts OSM labels represented as nodes, ways,
 or relations. The browser receives category, subtype, priority, and coordinates
 for each retained label plus little-endian geometry arrays and `context.json`.
+
+Labels are deduplicated only when the same name occurs within 35 m. Distinct
+nearby places and separate business branches are retained; there are no category
+quotas. OSM original/Urdu/alternate names are retained for search. Overture names
+are used only where the source actually supplies one. Each area also contains
+34 mapped park/permanent-water polygons, including inner rings, from closed OSM
+ways. These are visual context, not new land-surface or drainage model inputs.
 
 The OSM-only extracts can be refreshed without redownloading Overture buildings:
 

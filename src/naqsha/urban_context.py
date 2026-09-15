@@ -181,7 +181,11 @@ def _label_category(tags: dict[str, Any]) -> tuple[str, int, str] | None:
         return "hotel", 68 if tourism == "hotel" else 56, str(tourism).replace("_", " ").title()
     leisure = tags.get("leisure")
     if leisure in {"park", "garden", "nature_reserve", "playground"}:
-        return "park", 76 if leisure in {"park", "nature_reserve"} else 62, str(leisure).replace("_", " ").title()
+        return (
+            "park",
+            76 if leisure in {"park", "nature_reserve"} else 62,
+            str(leisure).replace("_", " ").title(),
+        )
     if leisure in {"stadium", "sports_centre", "fitness_centre", "pitch"}:
         priority = 88 if leisure == "stadium" else 64
         return "sports", priority, str(leisure).replace("_", " ").title()
@@ -197,8 +201,9 @@ def _label_category(tags: dict[str, Any]) -> tuple[str, int, str] | None:
         return "transit", 92, str(tags["aeroway"]).title()
     if tags.get("man_made") in {"tower", "water_tower"}:
         return "landmark", 62, str(tags["man_made"]).replace("_", " ").title()
-    if tags.get("building") and tags.get("building") not in {"yes", "house", "residential"}:
-        return "building", 48, str(tags["building"]).replace("_", " ").title()
+    if tags.get("building"):
+        kind = str(tags["building"]).replace("_", " ").title()
+        return "building", 48, "Building" if kind == "Yes" else kind
     return None
 
 
@@ -206,48 +211,23 @@ def _local_xy(x: float, y: float, origin: tuple[float, float]) -> tuple[float, f
     return x - origin[0], origin[1] - y
 
 
-def _declutter_labels(labels: list[dict[str, Any]], minimum_distance: float = 45) -> list[dict]:
+def _declutter_labels(labels: list[dict[str, Any]], minimum_distance: float = 35) -> list[dict]:
+    """Remove co-located duplicate names, never neighbouring businesses or categories.
+
+    Screen-space collisions belong in the viewer: an offline density limit loses
+    real places even when the user zooms in or searches for them.
+    """
     selected: list[dict[str, Any]] = []
-    seen: set[tuple[str, int, int]] = set()
-    category_counts: Counter[str] = Counter()
-    category_limits = {
-        "district": 25,
-        "road": 30,
-        "transit": 20,
-        "landmark": 30,
-        "education": 40,
-        "healthcare": 35,
-        "worship": 35,
-        "government": 30,
-        "shopping": 45,
-        "food": 35,
-        "hotel": 25,
-        "park": 30,
-        "sports": 25,
-        "building": 45,
-    }
+    by_name: dict[str, list[dict[str, Any]]] = {}
     for label in sorted(labels, key=lambda item: (-item["priority"], item["name"])):
-        key = (
-            label["name"].casefold(),
-            round(label["x"] / 200),
-            round(label["z"] / 200),
-        )
-        category = label["category"]
-        if key in seen or category_counts[category] >= category_limits.get(category, 5):
-            continue
+        key = label["name"].strip().casefold()
         if any(
-            label["category"] == other["category"]
-            and label["priority"] < 85
-            and other["priority"] < 85
-            and
-            (label["x"] - other["x"]) ** 2 + (label["z"] - other["z"]) ** 2
-            < minimum_distance**2
-            for other in selected
+            (label["x"] - other["x"]) ** 2 + (label["z"] - other["z"]) ** 2 < minimum_distance**2
+            for other in by_name.get(key, [])
         ):
             continue
         selected.append(label)
-        seen.add(key)
-        category_counts[category] += 1
+        by_name.setdefault(key, []).append(label)
     return selected
 
 
@@ -300,6 +280,7 @@ def export_urban_context(
     measured_height: list[int] = []
     source_ids: list[int] = []
     source_counts: Counter[str] = Counter()
+    label_candidates: list[dict[str, Any]] = []
     for feature in building_data.get("features", []):
         properties = feature.get("properties") or {}
         projected = transform(projector.transform, shape(feature["geometry"]))
@@ -322,12 +303,27 @@ def export_urban_context(
             source_id, source_name = _source_id(properties)
             source_ids.append(source_id)
             source_counts[source_name] += 1
+            name = (properties.get("names") or {}).get("primary")
+            if name:
+                point = polygon.representative_point()
+                local_x, local_z = _local_xy(point.x, point.y, origin)
+                label_candidates.append(
+                    {
+                        "name": str(name),
+                        "category": "building",
+                        "priority": 48,
+                        "kind": "Building",
+                        "x": round(local_x, 2),
+                        "z": round(local_z, 2),
+                        "source": "Overture Maps",
+                    }
+                )
 
     osm = json.loads(osm_path.read_text())
     line_coordinates: list[float] = []
     line_index: list[int] = []
     line_names: list[str] = []
-    label_candidates: list[dict[str, Any]] = []
+    landcover: list[dict[str, Any]] = []
     named_roads: set[str] = set()
     for element in osm.get("elements", []):
         tags = element.get("tags") or {}
@@ -346,6 +342,14 @@ def export_urban_context(
                             "kind": category[2],
                             "x": round(local_x, 2),
                             "z": round(local_z, 2),
+                            "aliases": list(
+                                dict.fromkeys(
+                                    str(tags[key])
+                                    for key in ("name", "name:en", "name:ur", "alt_name")
+                                    if tags.get(key) and tags[key] != display_name
+                                )
+                            ),
+                            "source": "OpenStreetMap",
                         }
                     )
         if element.get("type") == "node":
@@ -356,6 +360,23 @@ def export_urban_context(
         if class_id is None:
             continue
         coordinates = [(point["lon"], point["lat"]) for point in element["geometry"]]
+        if class_id in {8, 9} and len(coordinates) >= 4 and coordinates[0] == coordinates[-1]:
+            polygon = transform(projector.transform, Polygon(coordinates))
+            if polygon.is_valid:
+                for part in _polygons(polygon.intersection(clip)):
+                    part = part.simplify(1, preserve_topology=True)
+                    landcover.append(
+                        {
+                            "kind": "park" if class_id == 9 else "water",
+                            "rings": [
+                                [
+                                    [round(v, 2) for v in _local_xy(x, y, origin)]
+                                    for x, y in ring.coords
+                                ]
+                                for ring in [part.exterior, *part.interiors]
+                            ],
+                        }
+                    )
         projected = transform(projector.transform, LineString(coordinates)).intersection(clip)
         pieces = _lines(projected)
         name = tags.get("name:en") or tags.get("name") or ""
@@ -370,7 +391,7 @@ def export_urban_context(
                 line_coordinates.extend((local_x, local_z))
             line_index.extend((offset, len(points), class_id))
             line_names.append(str(name))
-        if name and class_id <= 3 and name.casefold() not in named_roads and pieces:
+        if name and class_id <= 6 and name.casefold() not in named_roads and pieces:
             midpoint = max(pieces, key=lambda part: part.length).interpolate(0.5, normalized=True)
             local_x, local_z = _local_xy(midpoint.x, midpoint.y, origin)
             label_candidates.append(
@@ -378,7 +399,7 @@ def export_urban_context(
                     "name": name,
                     "category": "road",
                     "priority": 76 - class_id * 7,
-                    "kind": "Major road",
+                    "kind": "Major road" if class_id <= 3 else "Street",
                     "x": round(local_x, 2),
                     "z": round(local_z, 2),
                 }
@@ -423,7 +444,10 @@ def export_urban_context(
             "classes": LINE_CLASSES,
         },
         "labels": selected_labels,
-        "labelCounts": dict(sorted(Counter(label["category"] for label in selected_labels).items())),
+        "landcover": landcover,
+        "labelCounts": dict(
+            sorted(Counter(label["category"] for label in selected_labels).items())
+        ),
         "provenance": {
             "overtureRelease": _overture_release(buildings_path),
             "osmTimestamp": osm.get("osm3s", {}).get("timestamp_osm_base"),
