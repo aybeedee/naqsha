@@ -817,7 +817,8 @@ export function Explorer({
             </div>
             <button
               className="map-tool"
-              aria-label="Reset map view"
+              aria-label="Show whole study area"
+              title="Show whole study area"
               onClick={() => {
                 command('reset')
                 setSelected(null)
@@ -923,38 +924,40 @@ export function Explorer({
             </section>
           )}
           <div className="map-bottom">
-            <div className="legend" aria-label="Map legend">
-              {view === 'agreement' ? (
-                <>
-                  <strong>Models showing ≥10 cm</strong>
-                  <div className="agreement-key">
-                    <span>
-                      <i style={{ background: '#dc806b' }} />1
-                    </span>
-                    <span>
-                      <i style={{ background: '#d2b66c' }} />2
-                    </span>
-                    <span>
-                      <i style={{ background: '#62b9a1' }} />3
-                    </span>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <strong>Water depth</strong>
-                  <div className="depth-ramp" />
-                  <div className="depth-labels">
-                    <span>0</span>
-                    <span>30 cm</span>
-                    <span>1 m</span>
-                    <span>2 m+</span>
-                  </div>
-                </>
-              )}
-              {dimension === '3d' && layers.water && (
-                <small>{waterScale}× height for visibility</small>
-              )}
-            </div>
+            {layers.water && (
+              <div className="legend" aria-label="Map legend">
+                {view === 'agreement' ? (
+                  <>
+                    <strong>Models showing ≥10 cm</strong>
+                    <div className="agreement-key">
+                      <span>
+                        <i style={{ background: '#dc806b' }} />1
+                      </span>
+                      <span>
+                        <i style={{ background: '#d2b66c' }} />2
+                      </span>
+                      <span>
+                        <i style={{ background: '#62b9a1' }} />3
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <strong>Water depth</strong>
+                    <div className="depth-ramp" />
+                    <div className="depth-labels">
+                      <span>0</span>
+                      <span>30 cm</span>
+                      <span>1 m</span>
+                      <span>2 m+</span>
+                    </div>
+                  </>
+                )}
+                {dimension === '3d' && layers.water && (
+                  <small>{waterScale}× height for visibility</small>
+                )}
+              </div>
+            )}
             <span className="navigation-hint">
               {dimension === '2d'
                 ? 'Drag to pan · Scroll to zoom'

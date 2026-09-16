@@ -14,6 +14,8 @@ not hydraulic obstacles.
 
 The dark map opens full-width; panels stay closed until needed. **Water** and
 **Places** on the map toggle those layers without opening settings.
+The 3D camera starts closer to the city, facing north. **Show whole study area**
+fits the entire model rectangle; the water legend disappears when water is hidden.
 
 - **Storm** explains the rainfall and shows flooded area, flagged road segments
   and the wet fraction within 250 m of neighbourhood labels.

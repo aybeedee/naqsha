@@ -7,6 +7,7 @@ import { smallContext, smallScenario } from './testFixtures'
 import { timelineDepthForView } from './data'
 import * as urban from './urbanGeometry'
 import { MapLabelRenderer } from './mapLabels'
+import { PerspectiveCamera, Vector3 } from 'three'
 
 const render = vi.hoisted(() => vi.fn())
 const dispose = vi.hoisted(() => vi.fn())
@@ -157,6 +158,27 @@ it('preserves city geometry and uses one label canvas during playback, rendering
   expect(canvases).toHaveBeenCalledTimes(2)
   expect(render).toHaveBeenCalledTimes(2)
   expect(queue).toHaveLength(0)
+  const camera = render.mock.calls[1][1] as PerspectiveCamera
+  const openingDistance = camera.position.length()
+  expect(camera.position.x).toBe(0) // Opening view is north-aligned.
+  await act(async () =>
+    root.render(
+      <TerrainScene
+        {...props}
+        action={{ type: 'reset', nonce: 1 }}
+        displayDepth={timelineDepthForView(data, 'city', 2)}
+      />,
+    ),
+  )
+  queue.shift()!(2)
+  expect(camera.position.length()).toBeGreaterThan(openingDistance)
+  const { extentWidthMetres: width, extentHeightMetres: height } = data.metadata.grid
+  for (const x of [-width / 2, width / 2])
+    for (const z of [-height / 2, height / 2]) {
+      const corner = new Vector3(x, 0, z).project(camera)
+      expect(Math.abs(corner.x)).toBeLessThan(1)
+      expect(Math.abs(corner.y)).toBeLessThan(1)
+    }
   await act(async () => root.unmount())
   expect(dispose).toHaveBeenCalledOnce()
   expect(node.querySelector('canvas')).toBeNull()

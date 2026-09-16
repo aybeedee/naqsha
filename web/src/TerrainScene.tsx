@@ -74,14 +74,25 @@ function disposeGroup(group: THREE.Group): void {
   }
 }
 
-function resetCamera(state: SceneState, data: ScenarioData, dimension: Dimension) {
+function resetCamera(
+  state: SceneState,
+  data: ScenarioData,
+  dimension: Dimension,
+  overview = false,
+) {
   state.stopMotion()
   const { camera, controls } = state
   const { extentWidthMetres: width, extentHeightMetres: height } = data.metadata.grid
+  const direction = new THREE.Vector3(0, 0.92, 0.58).normalize()
+  const tangent = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))
+  // Fit the near edge too: oblique corners are closer than the map centre.
   const fit =
-    Math.max(width / camera.aspect, height * (dimension === '2d' ? 1 : 0.82)) /
-    (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)))
-  const distance = Math.min(fit * 1.15, 20000)
+    dimension === '2d'
+      ? Math.max(width / camera.aspect, height) / (2 * tangent)
+      : (direction.z * height) / 2 +
+        Math.max(width / camera.aspect, direction.y * height) / (2 * tangent)
+  // Open on the city, while keeping a separate full-area overview one click away.
+  const distance = Math.min(fit * (overview || dimension === '2d' ? 1.08 : 0.64), 20000)
   controls.target.set(0, 0, 0)
   if (dimension === '2d') {
     controls.screenSpacePanning = true
@@ -94,7 +105,7 @@ function resetCamera(state: SceneState, data: ScenarioData, dimension: Dimension
   } else {
     controls.screenSpacePanning = false
     camera.up.set(0, 1, 0)
-    camera.position.copy(new THREE.Vector3(0.22, 0.92, 0.7).normalize().multiplyScalar(distance))
+    camera.position.copy(direction.multiplyScalar(distance))
     controls.enableRotate = true
     controls.mouseButtons.LEFT = THREE.MOUSE.PAN
     controls.mouseButtons.RIGHT = THREE.MOUSE.ROTATE
@@ -187,7 +198,7 @@ export function TerrainScene(props: Props) {
     renderer.toneMapping = THREE.ACESFilmicToneMapping
     renderer.toneMappingExposure = 0.95
     renderer.shadowMap.enabled = true
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap
+    renderer.shadowMap.type = THREE.PCFShadowMap
     renderer.shadowMap.autoUpdate = false
     renderer.domElement.setAttribute(
       'aria-label',
@@ -785,9 +796,9 @@ export function TerrainScene(props: Props) {
   }, [data, dimension])
   useEffect(() => {
     const state = sceneRef.current
-    if (!state) return
+    if (!state || action.nonce === 0) return
     const { camera, controls } = state
-    if (action.type === 'reset') resetCamera(state, data, dimension)
+    if (action.type === 'reset') resetCamera(state, data, dimension, true)
     else if (action.type === 'north') {
       const delta = camera.position.clone().sub(controls.target)
       state.flyTo(

@@ -86,6 +86,9 @@ describe('explorer interactions', () => {
     expect(water.getAttribute('aria-pressed')).toBe('false')
     expect(container.querySelector('aside')?.hidden).toBe(true)
     expect(container.querySelector('.map-caption')?.textContent).toContain('Water hidden')
+    expect(container.querySelector('[aria-label="Map legend"]')).toBeNull()
+    await act(async () => (water as HTMLButtonElement).click())
+    expect(container.querySelector('[aria-label="Map legend"]')).toBeTruthy()
   })
   it('stops at the final frame and replays from the beginning', async () => {
     vi.useFakeTimers()
