@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#101920" />
+    <meta
+      name="description"
+      content="How Naqsha makes its experimental Lahore flood maps, and what the results can and cannot tell us."
+    />
+    <title>Methodology — Naqsha</title>
+    <link rel="icon" href="/favicon.png" type="image/png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="stylesheet" href="/methodology/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="brand" href="/" aria-label="Naqsha home">
+          <img src="/brand/naqsha-icon.png" alt="" width="42" height="31" />
+          <img src="/brand/naqsha-wordmark.png" alt="" width="119" height="18" />
+        </a>
+        <a class="back-link" href="/">Explore the map <span aria-hidden="true">↗</span></a>
+      </div>
+    </header>
+
+    <main>
+      <article>
+        <p class="eyebrow">How the map is made</p>
+        <h1>Methodology</h1>
+        <p class="lead">
+          Naqsha shows what a flood model does with a particular rainstorm in two parts of Lahore:
+          Central Lahore and Gulberg–Liberty. The map on the site is an example storm, not a live
+          forecast.
+        </p>
+
+        <div class="run-summary" aria-label="Example run settings">
+          <div><strong>100 mm</strong><span>rain in 2 hours</span></div>
+          <div><strong>3</strong><span>terrain surfaces</span></div>
+          <div><strong>10 min</strong><span>between saved frames</span></div>
+        </div>
+
+        <section aria-labelledby="inputs">
+          <h2 id="inputs">1. Start with the ground</h2>
+          <p>
+            We put three public elevation datasets—Copernicus GLO-30, FABDEM and an SRTM-family
+            surface—on the same roughly 29-metre grid. Lahore is flat enough that small differences
+            between these datasets can change where the model puts water. FABDEM is derived from
+            Copernicus, so the three are not independent measurements.
+          </p>
+        </section>
+
+        <section aria-labelledby="simulation">
+          <h2 id="simulation">2. Run the same storm three times</h2>
+          <p>
+            Each terrain surface goes through SFINCS 2.4.0 with 100 mm of rain spread evenly over
+            two hours. We then let the water move for another two hours. All three runs use the same
+            assumed surface loss (5 mm per hour) and ground roughness (Manning's n = 0.06). Water can
+            leave at the edge of the model, and results close to that edge are excluded from area
+            summaries. These settings are assumptions, not measurements of Lahore's drains or soil.
+          </p>
+        </section>
+
+        <section aria-labelledby="map">
+          <h2 id="map">3. Turn the runs into a map</h2>
+          <p>
+            We save water depth every ten minutes. The combined view takes the middle of the three
+            depth values at each grid cell and time. “Whole event” shows each cell’s highest saved
+            depth, so its peaks did not necessarily occur together. The agreement layer counts how
+            many terrain runs exceeded 10 cm during the event; it is not a probability.
+          </p>
+          <p>
+            OpenStreetMap roads are sampled against those water grids to flag and rank exposed
+            segments. Overture building footprints and OpenStreetMap names help make the view
+            recognizable. Building heights are mostly estimates, and the buildings are not barriers
+            in the flood model. The raised water in 3D is a display choice, not extra model detail.
+          </p>
+        </section>
+
+        <section class="limits" aria-labelledby="limits">
+          <h2 id="limits">What the result cannot tell us</h2>
+          <p>
+            A 29-metre cell cannot resolve a kerb, underpass, road crown or property entrance. We do
+            not yet have a local bare-earth survey, a mapped drainage system, or a check against
+            observed flood depths. A flagged road is not necessarily closed; an unflagged route is
+            not necessarily safe. This is a screening experiment, not a street-level warning.
+          </p>
+          <p>
+            There is separate code to turn archived ECMWF ensemble rainfall into model scenarios.
+            The public map does not refresh forecasts or run a new simulation when it opens.
+          </p>
+        </section>
+
+        <footer class="sources">
+          <h2>Sources and code</h2>
+          <p>
+            The <a href="https://github.com/aybeedee/naqsha">repository</a> contains the model
+            pipeline and <a href="https://github.com/aybeedee/naqsha/blob/main/docs/data-sources.md">data notes</a>.
+            Solver documentation is published by <a href="https://sfincs.readthedocs.io/en/latest/">Deltares</a>.
+          </p>
+        </footer>
+      </article>
+    </main>
+  </body>
+</html>

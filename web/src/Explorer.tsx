@@ -1034,6 +1034,8 @@ export function Explorer({
                 ? 'Archived forecast'
                 : 'Forecast scenario'
               : 'Example rainfall'}
+            {' · '}
+            <a href="/methodology">Methodology</a>
           </span>
           <span>
             Buildings:{' '}

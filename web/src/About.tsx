@@ -135,6 +135,11 @@ export function About({
             surface-loss term, not a measured drainage capacity.
           </p>
         </details>
+        <p>
+          <a className="text-button" href="/methodology">
+            Read the methodology <Icon name="arrow" />
+          </a>
+        </p>
         <a
           className="text-button"
           href="https://github.com/aybeedee/naqsha"
