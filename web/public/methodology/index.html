@@ -26,77 +26,65 @@
 
     <main>
       <article>
-        <p class="eyebrow">How the map is made</p>
-        <h1>Methodology</h1>
+        <p class="eyebrow">Methodology</p>
+        <h1>How the flood map works</h1>
         <p class="lead">
-          Naqsha shows what a flood model does with a particular rainstorm in two parts of Lahore:
-          Central Lahore and Gulberg–Liberty. The map on the site is an example storm, not a live
-          forecast.
+          The map shows a test storm: 100 mm of rain over two hours in Central Lahore and
+          Gulberg–Liberty. It does not show today's forecast.
         </p>
 
-        <div class="run-summary" aria-label="Example run settings">
-          <div><strong>100 mm</strong><span>rain in 2 hours</span></div>
-          <div><strong>3</strong><span>terrain surfaces</span></div>
-          <div><strong>10 min</strong><span>between saved frames</span></div>
-        </div>
-
         <section aria-labelledby="inputs">
-          <h2 id="inputs">1. Start with the ground</h2>
+          <h2 id="inputs">1. Three versions of the ground</h2>
           <p>
-            We put three public elevation datasets—Copernicus GLO-30, FABDEM and an SRTM-family
-            surface—on the same roughly 29-metre grid. Lahore is flat enough that small differences
-            between these datasets can change where the model puts water. FABDEM is derived from
-            Copernicus, so the three are not independent measurements.
+            We use three public elevation maps: Copernicus, FABDEM and an SRTM-family map. Each is
+            divided into cells roughly 29 metres wide. In flat Lahore, small height differences
+            between these maps can change where water goes. FABDEM comes from Copernicus, so the
+            three maps are not independent measurements.
           </p>
         </section>
 
         <section aria-labelledby="simulation">
-          <h2 id="simulation">2. Run the same storm three times</h2>
+          <h2 id="simulation">2. Run the flood model</h2>
           <p>
-            Each terrain surface goes through SFINCS 2.4.0 with 100 mm of rain spread evenly over
-            two hours. We then let the water move for another two hours. All three runs use the same
-            assumed surface loss (5 mm per hour) and ground roughness (Manning's n = 0.06). Water can
-            leave at the edge of the model, and results close to that edge are excluded from area
-            summaries. These settings are assumptions, not measurements of Lahore's drains or soil.
+            We run a flood model called SFINCS once for each elevation map, using the same rain. We
+            save the water depth every ten minutes during the storm and for two hours afterward.
+            Every run uses the same assumed surface loss (5 mm per hour), ground roughness (0.06)
+            and open edges where water can leave. These are simplifying assumptions, not
+            measurements of Lahore's drains.
           </p>
         </section>
 
         <section aria-labelledby="map">
-          <h2 id="map">3. Turn the runs into a map</h2>
+          <h2 id="map">3. Read the result</h2>
           <p>
-            We save water depth every ten minutes. The combined view takes the middle of the three
-            depth values at each grid cell and time. “Whole event” shows each cell’s highest saved
-            depth, so its peaks did not necessarily occur together. The agreement layer counts how
-            many terrain runs exceeded 10 cm during the event; it is not a probability.
+            At each place and time, the main view shows the middle water depth from the three runs.
+            “Whole event” shows the highest saved depth at each place; those peaks may happen at
+            different times. “Model agreement” counts how many runs passed 10 cm; it does not tell
+            you the chance of flooding.
           </p>
           <p>
-            OpenStreetMap roads are sampled against those water grids to flag and rank exposed
-            segments. Overture building footprints and OpenStreetMap names help make the view
-            recognizable. Building heights are mostly estimates, and the buildings are not barriers
-            in the flood model. The raised water in 3D is a display choice, not extra model detail.
+            We check mapped roads against the simulated water to show potentially affected segments.
+            Buildings and place names help you find your way around; buildings do not block water in
+            the model. The 3D water is drawn taller so it is easier to see.
           </p>
         </section>
 
         <section class="limits" aria-labelledby="limits">
-          <h2 id="limits">What the result cannot tell us</h2>
+          <h2 id="limits">Where the map stops</h2>
           <p>
-            A 29-metre cell cannot resolve a kerb, underpass, road crown or property entrance. We do
-            not yet have a local bare-earth survey, a mapped drainage system, or a check against
-            observed flood depths. A flagged road is not necessarily closed; an unflagged route is
-            not necessarily safe. This is a screening experiment, not a street-level warning.
-          </p>
-          <p>
-            There is separate code to turn archived ECMWF ensemble rainfall into model scenarios.
-            The public map does not refresh forecasts or run a new simulation when it opens.
+            The grid cannot show kerbs, underpasses or individual entrances. We do not have detailed
+            ground and drainage surveys, or local flood observations to check the results against. A
+            flagged road may still be passable; an unflagged one may not be. This is an experiment,
+            not a street-level warning or a live forecast.
           </p>
         </section>
 
         <footer class="sources">
-          <h2>Sources and code</h2>
           <p>
-            The <a href="https://github.com/aybeedee/naqsha">repository</a> contains the model
-            pipeline and <a href="https://github.com/aybeedee/naqsha/blob/main/docs/data-sources.md">data notes</a>.
-            Solver documentation is published by <a href="https://sfincs.readthedocs.io/en/latest/">Deltares</a>.
+            More detail: <a href="https://github.com/aybeedee/naqsha">code</a>,
+            <a href="https://github.com/aybeedee/naqsha/blob/main/docs/data-sources.md"
+              >data sources</a
+            >, and <a href="https://sfincs.readthedocs.io/en/latest/">SFINCS documentation</a>.
           </p>
         </footer>
       </article>
