@@ -6,16 +6,15 @@ import type { AreaCatalog, ScenarioData, UrbanContextData } from './types'
 export function Brand() {
   return (
     <a className="brand" href="/" aria-label="Naqsha home">
-      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
-        <path d="m3 8 7-4 8 4 7-4v17l-7 4-8-4-7 4V8Z" stroke="currentColor" strokeWidth="1.5" />
-        <path
-          d="M10 4v17M18 8v17M4 16c5-5 8 5 13 0s5-3 8-4"
-          stroke="currentColor"
-          strokeWidth="1.5"
+      <img className="brand-mark" src="/brand/naqsha-icon.png" alt="" aria-hidden="true" />
+      <span className="brand-copy">
+        <img
+          className="brand-wordmark"
+          src="/brand/naqsha-wordmark.png"
+          alt=""
+          aria-hidden="true"
         />
-      </svg>
-      <span>
-        Naqsha<small>Lahore flood explorer</small>
+        <small>Lahore flood explorer</small>
       </span>
     </a>
   )

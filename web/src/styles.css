@@ -118,19 +118,25 @@ h2 {
   color: var(--ink);
   text-decoration: none;
 }
-.brand > svg {
-  color: var(--accent);
+.brand-mark {
+  display: block;
+  width: 44px;
+  height: auto;
+  filter: brightness(0) invert(1);
 }
-.brand > span {
-  font:
-    26px/1 Georgia,
-    'Times New Roman',
-    serif;
-  letter-spacing: -0.6px;
+.brand-copy {
+  display: block;
+  min-width: 0;
+}
+.brand-wordmark {
+  display: block;
+  width: 124px;
+  height: auto;
+  filter: brightness(0) invert(1);
 }
 .brand small {
   display: block;
-  margin-top: 6px;
+  margin-top: 4px;
   font:
     11px/1.1 -apple-system,
     BlinkMacSystemFont,
@@ -1425,15 +1431,15 @@ summary {
   .brand {
     gap: 8px;
   }
-  .brand > span {
-    font-size: 23px;
-  }
   .brand small {
     font-size: 9px;
     margin-top: 4px;
   }
-  .brand > svg {
-    width: 24px;
+  .brand-mark {
+    width: 34px;
+  }
+  .brand-wordmark {
+    width: 102px;
   }
   .area-picker {
     padding: 0;
